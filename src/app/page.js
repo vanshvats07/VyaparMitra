@@ -1,69 +1,304 @@
-import Image from "next/image";
+"use client";
+
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.js
-            </code>{" "}
-            file.
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+
+      <header className="border-b bg-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+
+          <div>
+            <p className="text-2xl font-bold text-green-700">
+              🚩 VyaparMitra
+            </p>
+            <p className="text-xs text-slate-500">
+              Aapka Business Digital Mitra
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push("/onboarding")}
+              className="hidden text-sm font-semibold text-slate-600 hover:text-green-700 md:block"
+            >
+              Get Started
+            </button>
+
+            <button
+              onClick={() => router.push("/onboarding")}
+              className="rounded-lg bg-green-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-800"
+            >
+              Shuru Karein
+            </button>
+          </div>
+
+        </div>
+      </header>
+
+      <section className="mx-auto grid max-w-7xl gap-12 px-6 py-16 md:grid-cols-2 md:items-center md:py-24">
+
+        <div>
+
+          <span className="inline-flex rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700">
+            🚩 AI-Powered Business Advisory
+          </span>
+
+          <h1 className="mt-6 text-4xl font-bold leading-tight md:text-6xl">
+            Aapka business idea,
+            <span className="text-green-700"> hamari guidance.</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
+            VyaparMitra aapko business planning, financial planning aur
+            government opportunities ko simple language mein samajhne
+            aur better decisions lene mein help karta hai.
           </p>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+
+            <button
+              onClick={() => router.push("/onboarding")}
+              className="rounded-xl bg-green-700 px-6 py-3.5 font-semibold text-white shadow-sm hover:bg-green-800"
+            >
+              Apna Business Shuru Karein →
+            </button>
+
+            <button
+              onClick={() => router.push("/onboarding")}
+              className="rounded-xl border border-slate-300 bg-white px-6 py-3.5 font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Explore VyaparMitra
+            </button>
+
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-6 text-sm text-slate-500">
+            <span>✓ Simple Guidance</span>
+            <span>✓ Local Language</span>
+            <span>✓ Government Support</span>
+          </div>
+
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="relative">
+
+          <div className="rounded-3xl border bg-white p-6 shadow-xl">
+
+            <div className="flex items-center justify-between border-b pb-5">
+
+              <div>
+                <p className="text-sm text-slate-500">
+                  Your Business Dashboard
+                </p>
+                <p className="mt-1 text-xl font-bold">
+                  Business Overview
+                </p>
+              </div>
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-lg">
+                ✓
+              </div>
+
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-4">
+
+              <div className="rounded-2xl bg-green-50 p-5">
+                <p className="text-sm text-slate-500">
+                  Business Health
+                </p>
+                <p className="mt-2 text-3xl font-bold text-green-700">
+                  82
+                </p>
+                <p className="mt-1 text-xs text-green-700">
+                  Strong Performance
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-blue-50 p-5">
+                <p className="text-sm text-slate-500">
+                  Opportunities
+                </p>
+                <p className="mt-2 text-3xl font-bold text-blue-700">
+                  12
+                </p>
+                <p className="mt-1 text-xs text-blue-700">
+                  Available
+                </p>
+              </div>
+
+            </div>
+
+            <div className="mt-5 rounded-2xl border p-5">
+
+              <div className="flex items-center justify-between">
+                <p className="font-semibold">
+                  Business Performance
+                </p>
+
+                <span className="text-sm font-semibold text-green-700">
+                  +12%
+                </span>
+              </div>
+
+              <div className="mt-6 flex h-32 items-end gap-3">
+
+                <div className="h-[35%] flex-1 rounded-t-lg bg-green-100"></div>
+                <div className="h-[50%] flex-1 rounded-t-lg bg-green-200"></div>
+                <div className="h-[45%] flex-1 rounded-t-lg bg-green-300"></div>
+                <div className="h-[65%] flex-1 rounded-t-lg bg-green-400"></div>
+                <div className="h-[75%] flex-1 rounded-t-lg bg-green-500"></div>
+                <div className="h-[90%] flex-1 rounded-t-lg bg-green-600"></div>
+
+              </div>
+
+            </div>
+
+            <div className="mt-5 rounded-2xl bg-slate-50 p-5">
+
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100">
+                  🤖
+                </div>
+
+                <div>
+                  <p className="font-semibold">
+                    AI Business Guide
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Personalized business suggestions
+                  </p>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
         </div>
-      </main>
-    </div>
+
+      </section>
+
+      <section className="border-y bg-white">
+
+        <div className="mx-auto max-w-7xl px-6 py-16">
+
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold text-green-700">
+              WHY VYAPARMITRA
+            </p>
+
+            <h2 className="mt-2 text-3xl font-bold">
+              Business shuru karna ab simple hai.
+            </h2>
+
+            <p className="mt-3 text-slate-600">
+              Ek hi platform par planning, guidance aur opportunities
+              ko samajhne ki koshish karein.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-5 md:grid-cols-4">
+
+            <div className="rounded-2xl border bg-slate-50 p-6">
+              <div className="text-3xl">💼</div>
+              <h3 className="mt-5 text-lg font-bold">
+                Business Advisory
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Budget, location aur interest ke hisaab se
+                business guidance.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border bg-slate-50 p-6">
+              <div className="text-3xl">💰</div>
+              <h3 className="mt-5 text-lg font-bold">
+                Financial Planning
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Investment, cost aur funding ko simple way mein
+                samajhne mein help.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border bg-slate-50 p-6">
+              <div className="text-3xl">🏛️</div>
+              <h3 className="mt-5 text-lg font-bold">
+                Government Schemes
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Business ke liye useful government schemes aur
+                opportunities.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border bg-slate-50 p-6">
+              <div className="text-3xl">🎙️</div>
+              <h3 className="mt-5 text-lg font-bold">
+                Local Language
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Hindi aur regional languages mein easy
+                business guidance.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 py-16">
+
+        <div className="rounded-3xl bg-green-700 px-6 py-12 text-center text-white md:px-16">
+
+          <p className="text-sm font-semibold text-green-100">
+            READY TO START?
+          </p>
+
+          <h2 className="mt-3 text-3xl font-bold md:text-4xl">
+            Apne business idea ko next step dein.
+          </h2>
+
+          <p className="mx-auto mt-4 max-w-2xl text-green-100">
+            Apni basic business information share karein aur
+            VyaparMitra ke saath apni journey shuru karein.
+          </p>
+
+          <button
+            onClick={() => router.push("/onboarding")}
+            className="mt-7 rounded-xl bg-white px-7 py-3.5 font-bold text-green-700 hover:bg-green-50"
+          >
+            Get Started →
+          </button>
+
+        </div>
+
+      </section>
+
+      <footer className="border-t bg-white">
+
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-6 text-center text-sm text-slate-500 md:flex-row md:items-center md:justify-between md:text-left">
+
+          <p>
+            🚩 VyaparMitra — Aapka Business Digital Mitra
+          </p>
+
+          <p>
+            छोटे व्यवसायों के लिए डिजिटल मार्गदर्शन
+          </p>
+
+        </div>
+
+      </footer>
+
+    </main>
   );
 }
