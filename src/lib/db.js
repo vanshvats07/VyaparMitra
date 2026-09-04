@@ -30,6 +30,7 @@ export async function connectDB() {
     const opts = {
       bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
+      dbName: "vyaparmitra",
     };
 
     cached.promise = mongoose

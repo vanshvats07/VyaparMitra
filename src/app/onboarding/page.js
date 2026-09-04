@@ -47,27 +47,25 @@ export default function Onboarding() {
       const data = await response.json();
 
       if (!response.ok) {
-        setErrorMessage(data.message || "Failed to create user profile");
+        let msg = data.message || "Failed to create user profile.";
+        if (data.errors && Object.keys(data.errors).length > 0) {
+          msg = Object.values(data.errors).join(", ");
+        }
+        setErrorMessage(msg);
         setLoading(false);
         return;
       }
 
-      // Save user with MongoDB _id to localStorage for dashboard
-      localStorage.setItem(
-        "vyaparMitraUser",
-        JSON.stringify(data.user)
-      );
+      // Store ONLY the returned user _id in localStorage
+      localStorage.setItem("vyaparMitraUserId", data._id);
+      localStorage.setItem("userId", data._id);
+      localStorage.removeItem("vyaparMitraUser");
 
+      // Redirect to /dashboard
       router.push("/dashboard");
     } catch (err) {
       console.error("Submission error:", err);
-      // Fallback save to localStorage
-      localStorage.setItem(
-        "vyaparMitraUser",
-        JSON.stringify(form)
-      );
-      router.push("/dashboard");
-    } finally {
+      setErrorMessage("Network error: Could not reach the server. Please try again.");
       setLoading(false);
     }
   }

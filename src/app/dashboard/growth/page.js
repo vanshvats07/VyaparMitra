@@ -8,14 +8,25 @@ export default function Growth() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("vyaparMitraUser");
+    const userId =
+      localStorage.getItem("vyaparMitraUserId") ||
+      localStorage.getItem("userId");
 
-    if (!savedUser) {
+    if (!userId) {
       router.push("/onboarding");
       return;
     }
 
-    setUser(JSON.parse(savedUser));
+    fetch(`/api/users/${userId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.user) {
+          setUser(data.user);
+        } else {
+          router.push("/onboarding");
+        }
+      })
+      .catch(() => router.push("/onboarding"));
   }, [router]);
 
   if (!user) {

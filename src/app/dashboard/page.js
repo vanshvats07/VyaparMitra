@@ -11,14 +11,28 @@ export default function Dashboard() {
   const [bulkBuyers, setBulkBuyers] = useState(false);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("vyaparMitraUser");
+    const userId =
+      localStorage.getItem("vyaparMitraUserId") ||
+      localStorage.getItem("userId");
 
-    if (!savedUser) {
+    if (!userId) {
       router.push("/onboarding");
       return;
     }
 
-    setUser(JSON.parse(savedUser));
+    fetch(`/api/users/${userId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.user) {
+          setUser(data.user);
+        } else {
+          router.push("/onboarding");
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load user from API:", err);
+        router.push("/onboarding");
+      });
   }, [router]);
 
   if (!user) {
