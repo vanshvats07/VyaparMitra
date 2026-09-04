@@ -3,11 +3,7 @@
 import BusinessChart from "./components/BusinessChart";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  BASE_BALANCE,
-  SCENARIO_IMPACTS,
-  calculateProjectedBalance,
-} from "@/lib/simulator";
+import { calculateWhatIf } from "@/lib/whatIf";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -120,7 +116,7 @@ export default function Dashboard() {
     );
   }
 
-  const projectedBalance = calculateProjectedBalance(BASE_BALANCE, {
+  const projectedBalance = calculateWhatIf({
     salesDrop,
     bulkBuyers,
   });
@@ -511,7 +507,7 @@ export default function Dashboard() {
                   </div>
 
                   <span className="font-semibold text-red-600">
-                    -₹{Math.abs(SCENARIO_IMPACTS.salesDrop).toLocaleString("en-IN")}
+                    -₹16,000
                   </span>
 
                 </label>
@@ -542,7 +538,7 @@ export default function Dashboard() {
                   </div>
 
                   <span className="font-semibold text-green-700">
-                    +₹{SCENARIO_IMPACTS.bulkBuyers.toLocaleString("en-IN")}
+                    +₹25,000
                   </span>
 
                 </label>
