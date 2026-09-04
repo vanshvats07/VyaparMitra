@@ -20,27 +20,56 @@ export default function Onboarding() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   function handleChange(e) {
+    if (errorMessage) setErrorMessage("");
     setForm({
       ...form,
       [e.target.name]: e.target.value,
     });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-
     setLoading(true);
+    setErrorMessage("");
 
-    localStorage.setItem(
-      "vyaparMitraUser",
-      JSON.stringify(form)
-    );
+    try {
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
 
-    setTimeout(() => {
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMessage(data.message || "Failed to create user profile");
+        setLoading(false);
+        return;
+      }
+
+      // Save user with MongoDB _id to localStorage for dashboard
+      localStorage.setItem(
+        "vyaparMitraUser",
+        JSON.stringify(data.user)
+      );
+
       router.push("/dashboard");
-    }, 500);
+    } catch (err) {
+      console.error("Submission error:", err);
+      // Fallback save to localStorage
+      localStorage.setItem(
+        "vyaparMitraUser",
+        JSON.stringify(form)
+      );
+      router.push("/dashboard");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -92,6 +121,11 @@ export default function Onboarding() {
           onSubmit={handleSubmit}
           className="rounded-3xl border bg-white p-6 shadow-sm md:p-8"
         >
+          {errorMessage && (
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+              ⚠️ {errorMessage}
+            </div>
+          )}
 
           <div className="mb-8">
             <h2 className="text-xl font-bold text-slate-900">
