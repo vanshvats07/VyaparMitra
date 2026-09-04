@@ -3,55 +3,127 @@
 import BusinessChart from "./components/BusinessChart";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  BASE_BALANCE,
+  SCENARIO_IMPACTS,
+  calculateProjectedBalance,
+} from "@/lib/simulator";
 
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [salesDrop, setSalesDrop] = useState(false);
   const [bulkBuyers, setBulkBuyers] = useState(false);
 
-  useEffect(() => {
-    const userId =
-      localStorage.getItem("vyaparMitraUserId") ||
-      localStorage.getItem("userId");
-
-    if (!userId) {
-      router.push("/onboarding");
-      return;
-    }
-
-    fetch(`/api/users/${userId}`)
+  const loadUser = (id) => {
+    fetch(`/api/users/${id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.user) {
           setUser(data.user);
         } else {
-          router.push("/onboarding");
+          setError(data.message || "Failed to load user profile");
         }
       })
       .catch((err) => {
         console.error("Failed to load user from API:", err);
-        router.push("/onboarding");
+        setError(
+          err.message ||
+            "Could not load your business profile. Please check your connection and try again."
+        );
+      })
+      .finally(() => {
+        setLoading(false);
       });
-  }, [router]);
+  };
 
-  if (!user) {
+  useEffect(() => {
+    const userId =
+      localStorage.getItem("userId") ||
+      localStorage.getItem("vyaparMitraUserId");
+
+    if (!userId) {
+      const timer = setTimeout(() => {
+        setError(
+          "No user profile found. Please complete the onboarding process first."
+        );
+        setLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+
+    loadUser(userId);
+  }, []);
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    const userId =
+      localStorage.getItem("userId") ||
+      localStorage.getItem("vyaparMitraUserId");
+
+    if (!userId) {
+      setError(
+        "No user profile found. Please complete the onboarding process first."
+      );
+      setLoading(false);
+      return;
+    }
+
+    loadUser(userId);
+  };
+
+  if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-600">Loading...</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-200 border-t-green-700" />
+          <p className="text-sm font-medium text-slate-600">
+            Loading your business dashboard...
+          </p>
+        </div>
       </main>
     );
   }
 
-  let projectedBalance = 80000;
-
-  if (salesDrop) {
-    projectedBalance -= 16000;
+  if (error || !user) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+        <div className="w-full max-w-md rounded-3xl border border-red-100 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 text-2xl text-red-600">
+            ⚠️
+          </div>
+          <h2 className="mt-4 text-xl font-bold text-slate-900">
+            Unable to Load Profile
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            {error || "We couldn't find your business profile."}
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <button
+              onClick={handleRetry}
+              className="w-full rounded-xl bg-green-700 py-3 text-sm font-semibold text-white transition hover:bg-green-800"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => router.push("/onboarding")}
+              className="w-full rounded-xl border border-slate-300 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Go to Onboarding
+            </button>
+          </div>
+        </div>
+      </main>
+    );
   }
 
-  if (bulkBuyers) {
-    projectedBalance += 25000;
-  }
+  const projectedBalance = calculateProjectedBalance(BASE_BALANCE, {
+    salesDrop,
+    bulkBuyers,
+  });
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 text-slate-900">
@@ -72,7 +144,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
 
             <span className="hidden text-sm text-slate-600 md:block">
-              हिंदी | English
+              {user.language === "en" ? "🇬🇧 English" : "🇮🇳 हिंदी"}
             </span>
 
             <button
@@ -190,7 +262,7 @@ export default function Dashboard() {
                   </h2>
 
                   <p className="mt-2 text-slate-600">
-                    📍 {user.district}, {user.state}
+                    📍 {user.village ? `${user.village}, ` : ""}{user.district}, {user.state}
                   </p>
 
                 </div>
@@ -201,7 +273,7 @@ export default function Dashboard() {
 
               </div>
 
-              <div className="mt-8 flex items-end justify-between border-t pt-5">
+              <div className="mt-8 flex flex-wrap items-end justify-between gap-4 border-t pt-5">
 
                 <div>
 
@@ -211,6 +283,18 @@ export default function Dashboard() {
 
                   <p className="mt-1 text-3xl font-bold text-green-700">
                     ₹{Number(user.budget).toLocaleString("en-IN")}
+                  </p>
+
+                </div>
+
+                <div>
+
+                  <p className="text-sm text-slate-500">
+                    Experience Level
+                  </p>
+
+                  <p className="mt-1 text-xl font-bold text-slate-800">
+                    {user.experience || "Beginner"}
                   </p>
 
                 </div>
@@ -226,23 +310,59 @@ export default function Dashboard() {
 
             </div>
 
-            <div className="rounded-2xl border bg-white p-6 shadow-sm">
+            <div className="flex flex-col justify-between rounded-2xl border bg-white p-6 shadow-sm">
 
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl text-green-700">
-                ✓
+              <div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-100 text-xl font-bold text-green-700">
+                    {user.name ? user.name.charAt(0).toUpperCase() : "👤"}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <h2 className="truncate text-base font-bold text-slate-900">
+                      {user.name}
+                    </h2>
+                    <p className="truncate text-xs text-slate-500">
+                      📞 {user.phone}
+                    </p>
+                  </div>
+
+                  <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
+                    Profile Ready
+                  </span>
+                </div>
+
+                <div className="mt-5 space-y-2.5 border-t pt-4 text-xs">
+
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Location:</span>
+                    <span className="max-w-[150px] truncate text-right font-semibold text-slate-800">
+                      {user.village ? `${user.village}, ` : ""}{user.district}, {user.state}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Experience:</span>
+                    <span className="font-semibold text-slate-800">
+                      {user.experience || "Beginner"}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Language:</span>
+                    <span className="font-semibold text-slate-800">
+                      {user.language === "hi" ? "हिंदी (Hindi)" : "English"}
+                    </span>
+                  </div>
+
+                </div>
+
               </div>
-
-              <h2 className="mt-4 text-center text-xl font-bold">
-                Profile Ready
-              </h2>
-
-              <p className="mt-2 text-center text-sm leading-6 text-slate-600">
-                आपकी business information save हो चुकी है।
-              </p>
 
               <button
                 onClick={() => router.push("/onboarding")}
-                className="mt-6 w-full rounded-lg bg-slate-100 py-3 text-sm font-semibold transition hover:bg-slate-200"
+                className="mt-6 w-full rounded-lg bg-slate-100 py-2.5 text-sm font-semibold transition hover:bg-slate-200"
               >
                 Update Profile
               </button>
@@ -391,7 +511,7 @@ export default function Dashboard() {
                   </div>
 
                   <span className="font-semibold text-red-600">
-                    -₹16,000
+                    -₹{Math.abs(SCENARIO_IMPACTS.salesDrop).toLocaleString("en-IN")}
                   </span>
 
                 </label>
@@ -422,7 +542,7 @@ export default function Dashboard() {
                   </div>
 
                   <span className="font-semibold text-green-700">
-                    +₹25,000
+                    +₹{SCENARIO_IMPACTS.bulkBuyers.toLocaleString("en-IN")}
                   </span>
 
                 </label>
