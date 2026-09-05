@@ -3,6 +3,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getStoredUserId } from "@/lib/clientUser";
+import states from "india-location-data/src/data/states.json";
+import districts from "india-location-data/src/data/districts.json";
+import blocks from "india-location-data/src/data/blocks.json";
+
+const sortedStates = [...states].sort((first, second) =>
+  first.name.localeCompare(second.name)
+);
+
+const sortedDistricts = [...districts].sort((first, second) =>
+  first.name.localeCompare(second.name)
+);
 
 export default function Onboarding() {
   const router = useRouter();
@@ -23,6 +34,27 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [editingUserId, setEditingUserId] = useState(null);
+  const [customVillage, setCustomVillage] = useState("");
+  const [isCustomVillage, setIsCustomVillage] = useState(false);
+
+  const selectedState = sortedStates.find((state) => state.name === form.state);
+  const availableDistricts = selectedState
+    ? sortedDistricts.filter((district) => district.stateId === selectedState.id)
+    : [];
+  const selectedDistrict = availableDistricts.find(
+    (district) => district.name === form.district
+  );
+  const districtVillages = selectedDistrict
+    ? blocks
+        .filter((block) => block.districtId === selectedDistrict.id)
+        .sort((first, second) => first.name.localeCompare(second.name))
+    : [];
+  const availableVillages =
+    districtVillages.length > 0
+      ? districtVillages
+      : selectedDistrict
+        ? [{ id: `district-${selectedDistrict.id}`, name: selectedDistrict.name }]
+        : [];
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -62,6 +94,34 @@ export default function Onboarding() {
 
   function handleChange(e) {
     if (errorMessage) setErrorMessage("");
+
+    if (e.target.name === "state") {
+      setForm({ ...form, state: e.target.value, district: "", village: "" });
+      setCustomVillage("");
+      setIsCustomVillage(false);
+      return;
+    }
+
+    if (e.target.name === "district") {
+      setForm({ ...form, district: e.target.value, village: "" });
+      setCustomVillage("");
+      setIsCustomVillage(false);
+      return;
+    }
+
+    if (e.target.name === "village" && e.target.value === "__other__") {
+      setForm({ ...form, village: "" });
+      setCustomVillage("");
+      setIsCustomVillage(true);
+      return;
+    }
+
+    if (e.target.name === "customVillage") {
+      setCustomVillage(e.target.value);
+      setForm({ ...form, village: e.target.value });
+      return;
+    }
+
     setForm({
       ...form,
       [e.target.name]: e.target.value,
@@ -227,14 +287,20 @@ export default function Onboarding() {
                 State
               </label>
 
-              <input
+              <select
                 name="state"
                 value={form.state}
                 onChange={handleChange}
-                placeholder="Uttar Pradesh"
                 required
-                className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
-              />
+                className="mt-2 w-full rounded-xl border bg-white px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+              >
+                <option value="">Select state</option>
+                {sortedStates.map((state) => (
+                  <option key={state.id} value={state.name}>
+                    {state.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -242,14 +308,23 @@ export default function Onboarding() {
                 District
               </label>
 
-              <input
+              <select
                 name="district"
                 value={form.district}
                 onChange={handleChange}
-                placeholder="Lucknow"
                 required
-                className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
-              />
+                disabled={!form.state}
+                className="mt-2 w-full rounded-xl border bg-white px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+              >
+                <option value="">
+                  {form.state ? "Select district" : "Select state first"}
+                </option>
+                {availableDistricts.map((district) => (
+                  <option key={district.id} value={district.name}>
+                    {district.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -257,13 +332,39 @@ export default function Onboarding() {
                 Village / City
               </label>
 
-              <input
+              <select
                 name="village"
                 value={form.village}
                 onChange={handleChange}
-                placeholder="Enter location"
-                className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
-              />
+                disabled={!form.district}
+                className="mt-2 w-full rounded-xl border bg-white px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+              >
+                <option value="">
+                  {form.district ? "Select village / city" : "Select district first"}
+                </option>
+                {form.village &&
+                  !availableVillages.some(
+                    (village) => village.name === form.village
+                  ) && (
+                  <option value={form.village}>{form.village}</option>
+                )}
+                {availableVillages.map((village) => (
+                  <option key={village.id} value={village.name}>
+                    {village.name}
+                  </option>
+                ))}
+                <option value="__other__">Other village / city</option>
+              </select>
+
+              {isCustomVillage && (
+                <input
+                  name="customVillage"
+                  value={customVillage || form.village}
+                  onChange={handleChange}
+                  placeholder="Enter village / city"
+                  className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                />
+              )}
             </div>
 
           </div>
