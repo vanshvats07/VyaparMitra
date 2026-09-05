@@ -94,7 +94,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "An unexpected error occurred while saving metric",
+        message: "Unable to save business metric",
       },
       { status: 500 }
     );

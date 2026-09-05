@@ -51,7 +51,7 @@ export async function GET(request, { params }) {
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to fetch metrics",
+        message: "Failed to fetch metrics",
       },
       { status: 500 }
     );

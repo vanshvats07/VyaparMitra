@@ -9,6 +9,9 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [metrics, setMetrics] = useState(null);
   const [businessMetrics, setBusinessMetrics] = useState([]);
+  const [insights, setInsights] = useState(null);
+  const [insightsLoading, setInsightsLoading] = useState(true);
+  const [insightsError, setInsightsError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -39,6 +42,24 @@ export default function Dashboard() {
       }
 
       setBusinessMetrics(historyData.metrics || []);
+
+      try {
+        const insightsResponse = await fetch(`/api/insights?userId=${id}`);
+        const insightsData = await insightsResponse.json();
+
+        if (!insightsResponse.ok || !insightsData.success) {
+          throw new Error(insightsData.message || "Unable to load business insights");
+        }
+
+        setInsights(insightsData.insights || null);
+        setInsightsError("");
+      } catch (insightsLoadError) {
+        console.error("Failed to load business insights:", insightsLoadError);
+        setInsights(null);
+        setInsightsError("Business insights are currently unavailable.");
+      } finally {
+        setInsightsLoading(false);
+      }
     } catch (loadError) {
       console.error("Failed to load dashboard data:", loadError);
       setError(
@@ -70,6 +91,9 @@ export default function Dashboard() {
   const handleRetry = () => {
     setLoading(true);
     setError(null);
+    setInsights(null);
+    setInsightsError("");
+    setInsightsLoading(true);
     const userId =
       localStorage.getItem("userId") ||
       localStorage.getItem("vyaparMitraUserId");
@@ -556,6 +580,81 @@ export default function Dashboard() {
               </button>
 
             </div>
+
+          </section>
+
+          <section className="mt-8 rounded-2xl border bg-white p-6 shadow-sm">
+
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">
+                💡
+              </span>
+
+              <div>
+                <h2 className="text-xl font-bold">
+                  AI Business Insights
+                </h2>
+
+                <p className="text-sm text-slate-500">
+                  Short guidance based on your profile and available business data.
+                </p>
+              </div>
+            </div>
+
+            {insightsLoading ? (
+              <p className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                Loading business insights...
+              </p>
+            ) : insightsError ? (
+              <p className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {insightsError}
+              </p>
+            ) : !insights ? (
+              <p className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                No business insights are available yet.
+              </p>
+            ) : (
+              <div className="mt-6 space-y-5">
+                <p className="rounded-xl bg-green-50 p-4 text-sm leading-6 text-slate-700">
+                  {insights.summary}
+                </p>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-xl bg-blue-50 p-4">
+                    <p className="text-sm font-semibold text-blue-700">
+                      Opportunities
+                    </p>
+                    <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
+                      {insights.opportunities.map((item) => (
+                        <li key={item}>• {item}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="rounded-xl bg-red-50 p-4">
+                    <p className="text-sm font-semibold text-red-700">
+                      Risks
+                    </p>
+                    <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
+                      {insights.risks.map((item) => (
+                        <li key={item}>• {item}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="rounded-xl bg-orange-50 p-4">
+                    <p className="text-sm font-semibold text-orange-700">
+                      Next Steps
+                    </p>
+                    <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
+                      {insights.nextSteps.map((item) => (
+                        <li key={item}>• {item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </section>
 

@@ -10,12 +10,12 @@ export async function GET() {
       message: "MongoDB connected successfully",
     });
   } catch (error) {
-    console.log("Database error:", error);
+    console.error("Database health check error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Database connection failed",
+        message: "Database connection failed",
       },
       { status: 500 }
     );

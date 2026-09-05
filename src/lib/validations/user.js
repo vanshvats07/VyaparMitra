@@ -18,37 +18,45 @@ export const createUserSchema = z.object({
   state: z
     .string({ error: "State is required" })
     .trim()
-    .min(1, "State is required"),
+    .min(1, "State is required")
+    .max(100, "State is too long"),
 
   district: z
     .string({ error: "District is required" })
     .trim()
-    .min(1, "District is required"),
+    .min(1, "District is required")
+    .max(100, "District is too long"),
 
   village: z
     .string()
     .trim()
+    .max(100, "Village is too long")
     .optional()
     .default(""),
 
   businessIdea: z
     .string({ error: "Business idea is required" })
     .trim()
-    .min(1, "Business idea is required"),
+    .min(1, "Business idea is required")
+    .max(200, "Business idea is too long"),
 
   businessCategory: z
     .string({ error: "Business category is required" })
     .trim()
-    .min(1, "Business category is required"),
+    .min(1, "Business category is required")
+    .max(100, "Business category is too long"),
 
   budget: z.coerce
     .number({ error: "Budget must be a valid number" })
-    .min(0, "Budget must be 0 or greater"),
+    .finite("Budget must be a finite number")
+    .min(0, "Budget must be 0 or greater")
+    .max(1_000_000_000, "Budget is too large"),
 
   experience: z
     .string({ error: "Experience level is required" })
     .trim()
-    .min(1, "Experience level is required"),
+    .min(1, "Experience level is required")
+    .max(100, "Experience level is too long"),
 
   language: z
     .enum(["hi", "en"], {

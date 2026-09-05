@@ -92,7 +92,7 @@ export default function Home() {
 
               <div>
                 <p className="text-sm text-slate-500">
-                  Your Business Dashboard
+                  Dashboard Preview
                 </p>
                 <p className="mt-1 text-xl font-bold">
                   Business Overview
@@ -112,10 +112,10 @@ export default function Home() {
                   Business Health
                 </p>
                 <p className="mt-2 text-3xl font-bold text-green-700">
-                  82
+                  Personalized
                 </p>
                 <p className="mt-1 text-xs text-green-700">
-                  Strong Performance
+                  Based on your profile
                 </p>
               </div>
 
@@ -124,10 +124,10 @@ export default function Home() {
                   Opportunities
                 </p>
                 <p className="mt-2 text-3xl font-bold text-blue-700">
-                  12
+                  Available
                 </p>
                 <p className="mt-1 text-xs text-blue-700">
-                  Available
+                  View on dashboard
                 </p>
               </div>
 
@@ -141,7 +141,7 @@ export default function Home() {
                 </p>
 
                 <span className="text-sm font-semibold text-green-700">
-                  +12%
+                  Live data
                 </span>
               </div>
 

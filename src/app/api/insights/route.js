@@ -2,17 +2,17 @@ import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { getAuthenticatedUserId } from "@/lib/auth";
+import { generateGeminiText } from "@/lib/gemini";
 import User from "@/models/User";
 import BusinessMetric from "@/models/BusinessMetric";
 import GovernmentScheme from "@/models/GovernmentScheme";
 import { calculateBusinessMetrics } from "@/lib/calculations/businessMetrics";
-import { generateGeminiText } from "@/lib/gemini";
 import {
-  recommendationRequestSchema,
-  recommendationResponseSchema,
-} from "@/lib/validations/recommendation";
+  insightsRequestSchema,
+  insightsResponseSchema,
+} from "@/lib/validations/insights";
 
-function getJsonFromModelText(text) {
+function parseModelJson(text) {
   const withoutCodeFence = text
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/, "")
@@ -25,65 +25,58 @@ function getJsonFromModelText(text) {
   }
 }
 
-function buildRecommendationPrompt({ user, schemes, history, calculatedMetrics }) {
+function buildInsightsPrompt({ user, schemes, history, calculatedMetrics }) {
   return `You are a practical business advisor for small businesses in India.
-Create personalized recommendations using only the supplied information.
+Create a short business insight report using only the supplied information.
 
-Return JSON only, with this exact shape:
+Return JSON only with this exact shape:
 {
-  "recommendations": [
-    {
-      "title": "short action title",
-      "description": "practical advice",
-      "reason": "why this fits the supplied business information",
-      "priority": "high|medium|low"
-    }
-  ]
+  "summary": "short current situation summary",
+  "opportunities": ["practical opportunity"],
+  "risks": ["specific risk or limitation"],
+  "nextSteps": ["clear next action"]
 }
 
-Do not invent schemes, eligibility rules, benefits, market prices, statistics, guarantees, or profit predictions.
-If verified scheme or market information is missing, say that it must be checked from an official source instead of guessing.
-Keep recommendations practical and concise. Do not claim the readiness score is scientifically validated.
+Use the user's actual budget, category, experience, location, profile completeness, and business records.
+Use scheme details only as verified scheme information. Market data is unavailable unless explicitly supplied.
+Do not invent schemes, eligibility rules, market prices, statistics, financial projections, or guarantees.
+Do not claim that any score is scientifically validated. If information is missing, say it is unavailable.
+Keep each list concise and practical.
 
-USER DATA:
+USER PROFILE (user-provided):
 ${JSON.stringify(
-  {
-    businessIdea: user.businessIdea,
-    businessCategory: user.businessCategory,
-    budget: user.budget,
-    experience: user.experience,
-    location: { state: user.state, district: user.district },
-  },
-  null,
-  2
-)}
+    {
+      businessIdea: user.businessIdea || "Unavailable",
+      businessCategory: user.businessCategory || "Unavailable",
+      budget: user.budget ?? "Unavailable",
+      experience: user.experience || "Unavailable",
+      location: {
+        state: user.state || "Unavailable",
+        district: user.district || "Unavailable",
+      },
+    },
+    null,
+    2
+  )}
 
-VERIFIED SCHEME DATA:
+VERIFIED GOVERNMENT SCHEMES:
 ${JSON.stringify(schemes, null, 2)}
 
-MARKET DATA:
-No verified market data is currently available.
+VERIFIED MARKET DATA:
+Unavailable. The market data source is not configured.
 
-CALCULATED METRICS:
+CALCULATED PROFILE METRICS:
 ${JSON.stringify(calculatedMetrics, null, 2)}
 
 RECENT BUSINESS RECORDS:
 ${JSON.stringify(history, null, 2)}`;
 }
 
-export async function POST(request) {
+export async function GET(request) {
   try {
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json(
-        { success: false, message: "Invalid JSON format in request body" },
-        { status: 400 }
-      );
-    }
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const validationResult = insightsRequestSchema.safeParse(query);
 
-    const validationResult = recommendationRequestSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
         { success: false, message: "A valid userId is required" },
@@ -101,7 +94,7 @@ export async function POST(request) {
 
     if ((await getAuthenticatedUserId()) !== userId) {
       return NextResponse.json(
-        { success: false, message: "You are not authorized to request recommendations" },
+        { success: false, message: "You are not authorized to view these insights" },
         { status: 403 }
       );
     }
@@ -119,7 +112,7 @@ export async function POST(request) {
       );
     }
 
-    const [schemes, history] = await Promise.all([
+    const [schemeResult, historyResult] = await Promise.allSettled([
       GovernmentScheme.find({
         $or: [
           { state: user.state },
@@ -138,47 +131,52 @@ export async function POST(request) {
         .lean(),
     ]);
 
-    const prompt = buildRecommendationPrompt({
+    const schemes =
+      schemeResult.status === "fulfilled"
+        ? schemeResult.value
+        : { unavailable: true };
+    const history =
+      historyResult.status === "fulfilled"
+        ? historyResult.value
+        : { unavailable: true };
+    const prompt = buildInsightsPrompt({
       user,
       schemes,
       history,
       calculatedMetrics: calculateBusinessMetrics(user),
     });
 
-    const result = await generateGeminiText(prompt, {
-      responseMimeType: "application/json",
-    });
+    const result = await generateGeminiText(prompt);
     if (result.error === "not_configured") {
       return NextResponse.json(
-        { success: false, message: "AI recommendations are not configured yet" },
+        { success: false, message: "AI insights are not configured yet" },
         { status: 503 }
       );
     }
     if (result.error) {
       return NextResponse.json(
-        { success: false, message: "The AI provider could not generate recommendations" },
+        { success: false, message: "The AI provider could not generate insights" },
         { status: 502 }
       );
     }
 
-    const responseData = getJsonFromModelText(result.text);
-    const validatedResponse = recommendationResponseSchema.safeParse(responseData);
+    const responseData = parseModelJson(result.text);
+    const validatedResponse = insightsResponseSchema.safeParse(responseData);
     if (!validatedResponse.success) {
       return NextResponse.json(
-        { success: false, message: "The AI provider returned an invalid recommendation response" },
+        { success: false, message: "The AI provider returned invalid insights" },
         { status: 502 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      recommendations: validatedResponse.data.recommendations,
+      insights: validatedResponse.data,
     });
   } catch (error) {
-    console.error("Recommendation route error:", error);
-
+    console.error("Insights route error:", error);
     return NextResponse.json(
-      { success: false, message: "Unable to generate recommendations right now" },
+      { success: false, message: "Unable to generate business insights" },
       { status: 500 }
     );
   }

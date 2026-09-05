@@ -5,7 +5,7 @@ const SESSION_COOKIE_NAME = "vyaparmitra_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
 function getSessionSecret() {
-  return process.env.SESSION_SECRET || process.env.MONGODB_URI;
+  return process.env.SESSION_SECRET;
 }
 
 function signUserId(userId) {

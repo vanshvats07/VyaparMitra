@@ -51,10 +51,10 @@ export default function AIGuide() {
     setAnswerError("");
 
     try {
-      const response = await fetch("/api/ai-guide", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, question }),
+        body: JSON.stringify({ userId, message: question }),
       });
       const data = await response.json();
 

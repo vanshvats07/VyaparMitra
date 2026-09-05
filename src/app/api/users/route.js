@@ -36,6 +36,13 @@ export async function POST(request) {
 
     const validatedData = validationResult.data;
 
+    if (!process.env.SESSION_SECRET) {
+      return NextResponse.json(
+        { success: false, message: "Authentication is not configured" },
+        { status: 503 }
+      );
+    }
+
     // 3. Connect to database
     await connectDB();
 
@@ -86,7 +93,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "An unexpected error occurred while creating user",
+        message: "Unable to create user profile",
       },
       { status: 500 }
     );
@@ -119,7 +126,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to fetch users",
+        message: "Failed to fetch users",
       },
       { status: 500 }
     );

@@ -5,6 +5,7 @@ import User from "@/models/User";
 import { aiGuideSchema } from "@/lib/validations/aiGuide";
 import { formatZodErrors } from "@/lib/validations/user";
 import { getAuthenticatedUserId } from "@/lib/auth";
+import { generateGeminiText } from "@/lib/gemini";
 
 /**
  * POST /api/ai-guide
@@ -63,7 +64,9 @@ export async function POST(request) {
     await connectDB();
 
     // 5. Load user business profile (exclude internal fields)
-    const user = await User.findById(userId).select("-__v").lean();
+    const user = await User.findById(userId)
+      .select("businessIdea businessCategory budget experience state district language")
+      .lean();
     if (!user) {
       return NextResponse.json(
         {
@@ -75,74 +78,38 @@ export async function POST(request) {
     }
 
     // 6. Construct structured context object
-    const context = {
-      businessProfile: {
-        name: user.name,
-        businessIdea: user.businessIdea,
-        businessCategory: user.businessCategory || "General",
-        budget: user.budget,
-        experience: user.experience || "Beginner",
-        location: {
-          state: user.state,
-          district: user.district,
-          village: user.village || "",
-        },
-        language: user.language || "hi",
-      },
-      question,
+    const businessProfile = {
+      businessIdea: user.businessIdea,
+      businessCategory: user.businessCategory || "General",
+      budget: user.budget,
+      experience: user.experience || "Beginner",
+      location: { state: user.state, district: user.district },
+      language: user.language || "hi",
     };
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "AI guide is not configured. Add GEMINI_API_KEY to the server environment.",
-        },
-        { status: 503 }
-      );
-    }
-
-    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
     const prompt = `You are VyaparMitra, a practical business advisor for small businesses in India.
 Answer the user's question clearly and concisely. Use the business profile below to personalize the advice.
 Do not invent government scheme eligibility, guarantees, or financial outcomes. Mention when the user should verify details with an official source.
 
 Business profile:
-${JSON.stringify(context.businessProfile, null, 2)}
+${JSON.stringify(businessProfile, null, 2)}
 
 User question:
 ${question}`;
 
-    const providerResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-        }),
-      }
-    );
-
-    const providerData = await providerResponse.json();
-    if (!providerResponse.ok) {
-      console.error("Gemini API error:", providerData);
+    const result = await generateGeminiText(prompt);
+    if (result.error === "not_configured") {
       return NextResponse.json(
-        { success: false, message: "The AI provider could not answer right now." },
-        { status: 502 }
+        {
+          success: false,
+          message: "AI guide is not configured yet",
+        },
+        { status: 503 }
       );
     }
-
-    const reply = providerData.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text)
-      .filter(Boolean)
-      .join("\n")
-      .trim();
-
-    if (!reply) {
+    if (result.error) {
       return NextResponse.json(
-        { success: false, message: "The AI provider returned an empty response." },
+        { success: false, message: "The AI provider could not answer right now." },
         { status: 502 }
       );
     }
@@ -150,27 +117,15 @@ ${question}`;
     return NextResponse.json({
       success: true,
       message: "AI Guide response generated successfully",
-      context,
-      reply,
+      reply: result.text,
     });
   } catch (error) {
     console.error("AI Guide route error:", error);
 
-    // Sanitize error message to avoid exposing MongoDB credentials or connection strings
-    const rawMessage = error.message || "";
-    const isSensitive =
-      rawMessage.includes("mongodb") ||
-      rawMessage.includes("@") ||
-      rawMessage.includes("Atlas");
-
-    const safeMessage = isSensitive
-      ? "Database operation failed. Please check server connection."
-      : rawMessage || "An unexpected error occurred in AI Guide route";
-
     return NextResponse.json(
       {
         success: false,
-        message: safeMessage,
+        message: "Unable to generate AI guidance right now",
       },
       { status: 500 }
     );
