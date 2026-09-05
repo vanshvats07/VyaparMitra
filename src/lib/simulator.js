@@ -1,22 +1,22 @@
-export const BASE_BALANCE = 80000;
-
-export const SCENARIO_IMPACTS = {
-  salesDrop: -16000,
-  bulkBuyers: 25000,
-};
+import { getWhatIfImpacts } from "./whatIf";
 
 /**
  * Calculates projected balance based on active What-If scenarios.
  */
-export function calculateProjectedBalance(baseBalance = BASE_BALANCE, scenarios = {}) {
+export function calculateProjectedBalance(
+  baseBalance = 0,
+  scenarios = {},
+  latestSales = 0
+) {
+  const impacts = getWhatIfImpacts(latestSales);
   let balance = baseBalance;
 
   if (scenarios.salesDrop) {
-    balance += SCENARIO_IMPACTS.salesDrop;
+    balance -= impacts.salesDrop;
   }
 
   if (scenarios.bulkBuyers) {
-    balance += SCENARIO_IMPACTS.bulkBuyers;
+    balance += impacts.bulkBuyers;
   }
 
   return balance;

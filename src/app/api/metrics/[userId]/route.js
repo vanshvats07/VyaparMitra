@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import BusinessMetric from "@/models/BusinessMetric";
 import User from "@/models/User";
+import { getAuthenticatedUserId } from "@/lib/auth";
 
 export async function GET(request, { params }) {
   try {
@@ -15,6 +16,13 @@ export async function GET(request, { params }) {
           message: "Invalid user ID format. Must be a 24-character hex string.",
         },
         { status: 400 }
+      );
+    }
+
+    if ((await getAuthenticatedUserId()) !== userId) {
+      return NextResponse.json(
+        { success: false, message: "You are not authorized to access these metrics" },
+        { status: 403 }
       );
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Onboarding() {
@@ -21,6 +21,45 @@ export default function Onboarding() {
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [editingUserId, setEditingUserId] = useState(null);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("edit") !== "1") return;
+
+    const userId =
+      localStorage.getItem("userId") ||
+      localStorage.getItem("vyaparMitraUserId");
+
+    if (!userId) return;
+
+    const timer = setTimeout(() => {
+      setEditingUserId(userId);
+      fetch(`/api/users/${userId}`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (!data.success || !data.user) {
+            throw new Error(data.message || "Failed to load your profile.");
+          }
+
+          setForm({
+            name: data.user.name || "",
+            phone: data.user.phone || "",
+            state: data.user.state || "",
+            district: data.user.district || "",
+            village: data.user.village || "",
+            businessIdea: data.user.businessIdea || "",
+            businessCategory: data.user.businessCategory || "",
+            budget: String(data.user.budget ?? ""),
+            experience: data.user.experience || "",
+            language: data.user.language || "en",
+          });
+        })
+        .catch((error) => setErrorMessage(error.message));
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   function handleChange(e) {
     if (errorMessage) setErrorMessage("");
@@ -36,8 +75,11 @@ export default function Onboarding() {
     setErrorMessage("");
 
     try {
-      const response = await fetch("/api/users", {
-        method: "POST",
+      const endpoint = editingUserId
+        ? `/api/users/${editingUserId}`
+        : "/api/users";
+      const response = await fetch(endpoint, {
+        method: editingUserId ? "PATCH" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -47,7 +89,7 @@ export default function Onboarding() {
       const data = await response.json();
 
       if (!response.ok) {
-        let msg = data.message || "Failed to create user profile.";
+        let msg = data.message || "Failed to save user profile.";
         if (data.errors && Object.keys(data.errors).length > 0) {
           msg = Object.values(data.errors).join(", ");
         }
@@ -56,9 +98,9 @@ export default function Onboarding() {
         return;
       }
 
-      // Store ONLY the returned user _id in localStorage
-      localStorage.setItem("vyaparMitraUserId", data._id);
-      localStorage.setItem("userId", data._id);
+      const savedUserId = editingUserId || data._id;
+      localStorage.setItem("vyaparMitraUserId", savedUserId);
+      localStorage.setItem("userId", savedUserId);
       localStorage.removeItem("vyaparMitraUser");
 
       // Redirect to /dashboard
@@ -454,8 +496,10 @@ export default function Onboarding() {
               className="mt-5 w-full rounded-xl bg-green-600 py-4 text-base font-bold text-white transition hover:bg-green-700 disabled:opacity-60"
             >
               {loading
-                ? "Creating Your Dashboard..."
-                : "Create My Business Dashboard →"}
+                ? "Saving Your Profile..."
+                : editingUserId
+                  ? "Save Profile Changes →"
+                  : "Create My Business Dashboard →"}
             </button>
 
           </div>

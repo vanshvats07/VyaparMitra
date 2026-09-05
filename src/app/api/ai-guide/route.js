@@ -4,12 +4,11 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { aiGuideSchema } from "@/lib/validations/aiGuide";
 import { formatZodErrors } from "@/lib/validations/user";
+import { getAuthenticatedUserId } from "@/lib/auth";
 
 /**
  * POST /api/ai-guide
- * Backend foundation for AI Business Guide.
- * Validates request, retrieves user profile, constructs structured context,
- * and returns a temporary mock response.
+ * Generates AI Business Guide responses using the user's stored profile.
  */
 export async function POST(request) {
   try {
@@ -53,6 +52,13 @@ export async function POST(request) {
       );
     }
 
+    if ((await getAuthenticatedUserId()) !== userId) {
+      return NextResponse.json(
+        { success: false, message: "You are not authorized to use this guide" },
+        { status: 403 }
+      );
+    }
+
     // 4. Connect to database
     await connectDB();
 
@@ -86,15 +92,66 @@ export async function POST(request) {
       question,
     };
 
-    // 7. Return structured context in temporary mock response
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "AI guide is not configured. Add GEMINI_API_KEY to the server environment.",
+        },
+        { status: 503 }
+      );
+    }
+
+    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    const prompt = `You are VyaparMitra, a practical business advisor for small businesses in India.
+Answer the user's question clearly and concisely. Use the business profile below to personalize the advice.
+Do not invent government scheme eligibility, guarantees, or financial outcomes. Mention when the user should verify details with an official source.
+
+Business profile:
+${JSON.stringify(context.businessProfile, null, 2)}
+
+User question:
+${question}`;
+
+    const providerResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+        }),
+      }
+    );
+
+    const providerData = await providerResponse.json();
+    if (!providerResponse.ok) {
+      console.error("Gemini API error:", providerData);
+      return NextResponse.json(
+        { success: false, message: "The AI provider could not answer right now." },
+        { status: 502 }
+      );
+    }
+
+    const reply = providerData.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text)
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+
+    if (!reply) {
+      return NextResponse.json(
+        { success: false, message: "The AI provider returned an empty response." },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      message: "AI Guide context prepared successfully (mock response)",
+      message: "AI Guide response generated successfully",
       context,
-      mockResponse: {
-        reply: `Hello ${user.name}! This is a temporary mock response for your question: "${question}". AI model provider will be connected in the next step.`,
-        status: "ready_for_ai_integration",
-      },
+      reply,
     });
   } catch (error) {
     console.error("AI Guide route error:", error);

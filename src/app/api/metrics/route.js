@@ -5,6 +5,7 @@ import BusinessMetric from "@/models/BusinessMetric";
 import User from "@/models/User";
 import { createMetricSchema } from "@/lib/validations/metric";
 import { formatZodErrors } from "@/lib/validations/user";
+import { getAuthenticatedUserId } from "@/lib/auth";
 
 export async function POST(request) {
   try {
@@ -43,6 +44,13 @@ export async function POST(request) {
           message: "Invalid user ID format. Must be a 24-character hex string.",
         },
         { status: 400 }
+      );
+    }
+
+    if ((await getAuthenticatedUserId()) !== validatedData.userId) {
+      return NextResponse.json(
+        { success: false, message: "You are not authorized to add metrics for this user" },
+        { status: 403 }
       );
     }
 

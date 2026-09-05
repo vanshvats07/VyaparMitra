@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 export default function AIGuide() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [userId, setUserId] = useState("");
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [answerError, setAnswerError] = useState("");
+  const [asking, setAsking] = useState(false);
 
   useEffect(() => {
     const userId =
@@ -17,17 +22,50 @@ export default function AIGuide() {
       return;
     }
 
-    fetch(`/api/users/${userId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.user) {
-          setUser(data.user);
-        } else {
-          router.push("/onboarding");
-        }
-      })
-      .catch(() => router.push("/onboarding"));
+    const timer = setTimeout(() => {
+      setUserId(userId);
+
+      fetch(`/api/users/${userId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.user) {
+            setUser(data.user);
+          } else {
+            router.push("/onboarding");
+          }
+        })
+        .catch(() => router.push("/onboarding"));
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [router]);
+
+  async function handleAsk(e) {
+    e.preventDefault();
+    if (!question.trim() || !userId) return;
+
+    setAsking(true);
+    setAnswerError("");
+
+    try {
+      const response = await fetch("/api/ai-guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, question }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Could not generate guidance.");
+      }
+
+      setAnswer(data.reply);
+    } catch (error) {
+      setAnswerError(error.message || "Could not generate guidance.");
+    } finally {
+      setAsking(false);
+    }
+  }
 
   if (!user) {
     return (
@@ -217,10 +255,36 @@ export default function AIGuide() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-xl bg-slate-50 p-5 text-sm text-slate-600">
-            Your personalized recommendations will be generated
-            based on your business profile.
-          </div>
+          <form onSubmit={handleAsk} className="mt-5 space-y-4">
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask a question about your business..."
+              rows="4"
+              maxLength="2000"
+              className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+            />
+
+            {answerError && (
+              <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {answerError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={asking || !question.trim()}
+              className="rounded-xl bg-green-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-60"
+            >
+              {asking ? "Thinking..." : "Ask AI Guide"}
+            </button>
+
+            {answer && (
+              <div className="whitespace-pre-wrap rounded-xl bg-slate-50 p-5 text-sm leading-7 text-slate-700">
+                {answer}
+              </div>
+            )}
+          </form>
 
         </section>
 

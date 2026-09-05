@@ -11,16 +11,22 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  { month: "Mar", sales: 52000, profit: 14000, expenses: 38000 },
-  { month: "Apr", sales: 58000, profit: 17000, expenses: 41000 },
-  { month: "May", sales: 65000, profit: 20000, expenses: 45000 },
-  { month: "Jun", sales: 72000, profit: 24000, expenses: 48000 },
-  { month: "Jul", sales: 68000, profit: 21000, expenses: 47000 },
-  { month: "Aug", sales: 80000, profit: 30000, expenses: 50000 },
-];
+export default function BusinessChart({ metrics = [] }) {
+  const data = metrics.map((metric) => ({
+    month: metric.month,
+    sales: metric.sales,
+    profit: metric.profit,
+    expenses: metric.expenses,
+  }));
 
-export default function BusinessChart() {
+  if (data.length === 0) {
+    return (
+      <div className="flex h-80 items-center justify-center text-sm text-slate-500">
+        No business metrics recorded yet.
+      </div>
+    );
+  }
+
   return (
     <div className="h-80 w-full">
       <ResponsiveContainer width="100%" height="100%">

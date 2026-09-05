@@ -3,36 +3,45 @@
 import BusinessChart from "./components/BusinessChart";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { calculateWhatIf } from "@/lib/whatIf";
+import { calculateWhatIf, getWhatIfImpacts } from "@/lib/whatIf";
 
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [metrics, setMetrics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [salesDrop, setSalesDrop] = useState(false);
   const [bulkBuyers, setBulkBuyers] = useState(false);
 
-  const loadUser = (id) => {
-    fetch(`/api/users/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.user) {
-          setUser(data.user);
-        } else {
-          setError(data.message || "Failed to load user profile");
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load user from API:", err);
-        setError(
-          err.message ||
-            "Could not load your business profile. Please check your connection and try again."
-        );
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+  const loadUser = async (id) => {
+    try {
+      const [userResponse, metricsResponse] = await Promise.all([
+        fetch(`/api/users/${id}`),
+        fetch(`/api/metrics/${id}`),
+      ]);
+
+      const userData = await userResponse.json();
+      const metricsData = await metricsResponse.json();
+
+      if (!userResponse.ok || !userData.success || !userData.user) {
+        throw new Error(userData.message || "Failed to load user profile");
+      }
+
+      if (!metricsResponse.ok || !metricsData.success) {
+        throw new Error(metricsData.message || "Failed to load business metrics");
+      }
+
+      setUser(userData.user);
+      setMetrics(metricsData.metrics || []);
+    } catch (err) {
+      console.error("Failed to load user from API:", err);
+      setError(
+        err.message ||
+          "Could not load your business profile. Please check your connection and try again."
+      );
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -50,7 +59,8 @@ export default function Dashboard() {
       return () => clearTimeout(timer);
     }
 
-    loadUser(userId);
+    const timer = setTimeout(() => loadUser(userId), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleRetry = () => {
@@ -116,7 +126,36 @@ export default function Dashboard() {
     );
   }
 
+  const latestMetric = metrics[metrics.length - 1];
+  const firstMetric = metrics[0];
+  const totalSales = metrics.reduce((total, metric) => total + metric.sales, 0);
+  const totalProfit = metrics.reduce((total, metric) => total + metric.profit, 0);
+  const salesGrowth =
+    firstMetric && firstMetric.sales > 0
+      ? ((latestMetric.sales - firstMetric.sales) / firstMetric.sales) * 100
+      : 0;
+  const profitMargin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+  const healthScore = metrics.length
+    ? Math.max(0, Math.min(100, Math.round(50 + salesGrowth + profitMargin)))
+    : 0;
+  const healthLabel =
+    healthScore >= 70
+      ? "Strong Performance"
+      : healthScore >= 40
+        ? "Needs Attention"
+        : "At Risk";
+  const cashFlowLabel = totalProfit >= 0 ? "Positive" : "Negative";
+  const currentCashBuffer = Number(user.budget) || 0;
+  const projectedMaxLoss = Math.round((latestMetric?.sales || 0) * 0.2 * 3);
+  const riskPercent = currentCashBuffer
+    ? Math.min(100, Math.round((projectedMaxLoss / currentCashBuffer) * 100))
+    : 0;
+  const riskLabel =
+    riskPercent > 50 ? "High" : riskPercent > 20 ? "Moderate" : "Low";
+  const whatIfImpacts = getWhatIfImpacts(latestMetric?.sales || 0);
   const projectedBalance = calculateWhatIf({
+    baseBalance: currentCashBuffer,
+    latestSales: latestMetric?.sales || 0,
     salesDrop,
     bulkBuyers,
   });
@@ -144,7 +183,7 @@ export default function Dashboard() {
             </span>
 
             <button
-              onClick={() => router.push("/onboarding")}
+              onClick={() => router.push("/onboarding?edit=1")}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-slate-50"
             >
               Edit Profile
@@ -201,7 +240,7 @@ export default function Dashboard() {
             <div className="my-4 border-t" />
 
             <button
-              onClick={() => router.push("/onboarding")}
+              onClick={() => router.push("/onboarding?edit=1")}
               className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
             >
               <span>⚙️</span>
@@ -296,7 +335,7 @@ export default function Dashboard() {
                 </div>
 
                 <button
-                  onClick={() => router.push("/onboarding")}
+                  onClick={() => router.push("/onboarding?edit=1")}
                   className="rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-50"
                 >
                   View Details
@@ -357,7 +396,7 @@ export default function Dashboard() {
               </div>
 
               <button
-                onClick={() => router.push("/onboarding")}
+                onClick={() => router.push("/onboarding?edit=1")}
                 className="mt-6 w-full rounded-lg bg-slate-100 py-2.5 text-sm font-semibold transition hover:bg-slate-200"
               >
                 Update Profile
@@ -385,7 +424,7 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-8">
-                <BusinessChart />
+                <BusinessChart metrics={metrics} />
               </div>
 
             </div>
@@ -403,7 +442,7 @@ export default function Dashboard() {
                   <div className="text-center">
 
                     <p className="text-3xl font-bold text-green-700">
-                      82
+                      {healthScore}
                     </p>
 
                     <p className="text-xs text-slate-500">
@@ -417,7 +456,7 @@ export default function Dashboard() {
               </div>
 
               <p className="mt-5 text-center font-semibold text-green-700">
-                Strong Performance
+                {healthLabel}
               </p>
 
               <div className="mt-6 space-y-4 border-t pt-5 text-sm">
@@ -428,7 +467,7 @@ export default function Dashboard() {
                   </span>
 
                   <span className="font-semibold text-green-700">
-                    +12%
+                    {salesGrowth >= 0 ? "+" : ""}{salesGrowth.toFixed(1)}%
                   </span>
                 </div>
 
@@ -438,7 +477,7 @@ export default function Dashboard() {
                   </span>
 
                   <span className="font-semibold text-green-700">
-                    +5%
+                    {profitMargin >= 0 ? "+" : ""}{profitMargin.toFixed(1)}%
                   </span>
                 </div>
 
@@ -448,7 +487,7 @@ export default function Dashboard() {
                   </span>
 
                   <span className="font-semibold">
-                    Stable
+                    {cashFlowLabel}
                   </span>
                 </div>
 
@@ -507,7 +546,7 @@ export default function Dashboard() {
                   </div>
 
                   <span className="font-semibold text-red-600">
-                    -₹16,000
+                    -₹{whatIfImpacts.salesDrop.toLocaleString("en-IN")}
                   </span>
 
                 </label>
@@ -538,7 +577,7 @@ export default function Dashboard() {
                   </div>
 
                   <span className="font-semibold text-green-700">
-                    +₹25,000
+                    +₹{whatIfImpacts.bulkBuyers.toLocaleString("en-IN")}
                   </span>
 
                 </label>
@@ -586,7 +625,7 @@ export default function Dashboard() {
                   </p>
 
                   <p className="mt-2 text-xl font-bold">
-                    ₹1.2L
+                    ₹{currentCashBuffer.toLocaleString("en-IN")}
                   </p>
 
                 </div>
@@ -598,7 +637,7 @@ export default function Dashboard() {
                   </p>
 
                   <p className="mt-2 text-xl font-bold text-red-600">
-                    -₹45k
+                    -₹{projectedMaxLoss.toLocaleString("en-IN")}
                   </p>
 
                 </div>
@@ -610,18 +649,21 @@ export default function Dashboard() {
                 <div className="flex justify-between text-sm">
 
                   <span>
-                    Risk Level: Moderate
+                    Risk Level: {riskLabel}
                   </span>
 
                   <span className="text-red-600">
-                    37%
+                    {riskPercent}%
                   </span>
 
                 </div>
 
                 <div className="mt-2 h-2 rounded-full bg-slate-200">
 
-                  <div className="h-2 w-[37%] rounded-full bg-red-500" />
+                  <div
+                    className="h-2 rounded-full bg-red-500"
+                    style={{ width: `${riskPercent}%` }}
+                  />
 
                 </div>
 
@@ -630,7 +672,9 @@ export default function Dashboard() {
               <div className="mt-6 space-y-3 text-sm text-slate-600">
 
                 <p>
-                  ✓ आपका cash buffer projected loss को handle कर सकता है।
+                  {riskPercent <= 100
+                    ? "✓ आपका cash buffer projected loss को handle कर सकता है।"
+                    : "⚠️ आपका projected loss available budget से अधिक है।"}
                 </p>
 
                 <p>

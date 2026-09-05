@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { createUserSchema, formatZodErrors } from "@/lib/validations/user";
+import { setSessionCookie } from "@/lib/auth";
 
 export async function POST(request) {
   try {
@@ -56,7 +57,7 @@ export async function POST(request) {
     const user = await User.create(validatedData);
 
     // 6. Return response with user's _id
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         message: "User created successfully",
@@ -65,6 +66,8 @@ export async function POST(request) {
       },
       { status: 201 }
     );
+
+    return setSessionCookie(response, user._id.toString());
   } catch (error) {
     console.error("User creation error:", error);
 
@@ -92,13 +95,23 @@ export async function POST(request) {
 
 export async function GET() {
   try {
+    const { getAuthenticatedUserId } = await import("@/lib/auth");
+    const userId = await getAuthenticatedUserId();
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
     await connectDB();
 
-    const users = await User.find().select("-__v").sort({ createdAt: -1 });
+    const user = await User.findById(userId).select("-__v");
 
     return NextResponse.json({
       success: true,
-      users,
+      users: user ? [user] : [],
     });
   } catch (error) {
     console.error("User fetch error:", error);
