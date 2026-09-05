@@ -133,7 +133,9 @@ export async function GET(request) {
       calculatedMetrics: calculateBusinessMetrics(user),
     });
 
-    const result = await generateGeminiText(prompt);
+    const result = await generateGeminiText(prompt, {
+      responseMimeType: "application/json",
+    });
     if (result.error === "not_configured") {
       return NextResponse.json(
         { success: false, message: "AI insights are not configured yet" },
