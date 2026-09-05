@@ -320,7 +320,7 @@ export default function Dashboard() {
                   </p>
 
                   <p className="mt-1 text-xl font-bold text-slate-800">
-                    {user.experience || "Beginner"}
+                    {user.experience || "Not provided"}
                   </p>
 
                 </div>

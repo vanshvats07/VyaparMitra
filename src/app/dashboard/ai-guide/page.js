@@ -3,10 +3,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getStoredUserId } from "@/lib/clientUser";
+import {
+  getBusinessIdeas,
+  getBusinessStrategy,
+  getGrowthActions,
+  getLocationStrategy,
+} from "@/lib/businessRecommendations";
 
 export default function AIGuide() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [userError, setUserError] = useState("");
   const [userId, setUserId] = useState("");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -36,7 +43,10 @@ export default function AIGuide() {
             router.push("/onboarding");
           }
         })
-        .catch(() => router.push("/onboarding"));
+        .catch((fetchError) => {
+          console.error("Failed to load AI guide profile:", fetchError);
+          setUserError("Unable to load your business profile right now.");
+        });
     }, 0);
 
     return () => clearTimeout(timer);
@@ -101,10 +111,15 @@ export default function AIGuide() {
   if (!user) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-600">Loading...</p>
+        <p className="text-slate-600">{userError || "Loading..."}</p>
       </main>
     );
   }
+
+  const businessIdea = getBusinessIdeas(user)[0];
+  const businessStrategy = getBusinessStrategy(user);
+  const growthAction = getGrowthActions(user)[0];
+  const locationStrategy = getLocationStrategy(user);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -198,7 +213,7 @@ export default function AIGuide() {
 
           <div className="mt-6 grid gap-5 md:grid-cols-2">
 
-            <div className="cursor-pointer rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+            <div onClick={() => router.push("/dashboard/business-idea")} className="cursor-pointer rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
               <div className="text-3xl">💡</div>
 
               <h3 className="mt-4 text-lg font-bold">
@@ -206,8 +221,8 @@ export default function AIGuide() {
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Check whether your business idea is practical
-                and what you should consider before starting.
+                {businessIdea.description} {businessIdea.reason} {businessIdea.budgetRange}.
+                Difficulty: {businessIdea.difficulty}.
               </p>
 
               <p className="mt-5 font-semibold text-green-700">
@@ -215,16 +230,16 @@ export default function AIGuide() {
               </p>
             </div>
 
-            <div className="cursor-pointer rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+            <div onClick={() => router.push("/dashboard/business-strategy")} className="cursor-pointer rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
               <div className="text-3xl">💰</div>
 
               <h3 className="mt-4 text-lg font-bold">
-                Budget Planning
+                Business Strategy
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Understand how you can divide your available
-                budget for starting and running the business.
+                Target customers: {businessStrategy.targetCustomer}. {businessStrategy.pricing}
+                {" "}{businessStrategy.expenseControl}
               </p>
 
               <p className="mt-5 font-semibold text-green-700">
@@ -232,7 +247,7 @@ export default function AIGuide() {
               </p>
             </div>
 
-            <div className="cursor-pointer rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+            <div onClick={() => router.push("/dashboard/location-strategy")} className="cursor-pointer rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
               <div className="text-3xl">📍</div>
 
               <h3 className="mt-4 text-lg font-bold">
@@ -240,8 +255,8 @@ export default function AIGuide() {
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Understand what factors you should consider
-                when choosing your business location.
+                {locationStrategy.area} {locationStrategy.customers} {locationStrategy.suppliers}
+                {" "}{locationStrategy.cost}
               </p>
 
               <p className="mt-5 font-semibold text-green-700">
@@ -249,7 +264,7 @@ export default function AIGuide() {
               </p>
             </div>
 
-            <div className="cursor-pointer rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+            <div onClick={() => router.push("/dashboard/growth")} className="cursor-pointer rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
               <div className="text-3xl">📈</div>
 
               <h3 className="mt-4 text-lg font-bold">
@@ -257,8 +272,7 @@ export default function AIGuide() {
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Explore practical ways to find customers,
-                increase sales and grow your business.
+                {growthAction.description}
               </p>
 
               <p className="mt-5 font-semibold text-green-700">

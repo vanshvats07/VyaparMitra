@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getStoredUserId } from "@/lib/clientUser";
+import { getGrowthActions } from "@/lib/businessRecommendations";
 
 export default function Growth() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const userId = getStoredUserId(true);
@@ -25,16 +27,21 @@ export default function Growth() {
           router.push("/onboarding");
         }
       })
-      .catch(() => router.push("/onboarding"));
+      .catch((fetchError) => {
+        console.error("Failed to load growth profile:", fetchError);
+        setError("Unable to load your business profile right now.");
+      });
   }, [router]);
 
   if (!user) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-600">Loading...</p>
+        <p className="text-slate-600">{error || "Loading..."}</p>
       </main>
     );
   }
+
+  const growthActions = getGrowthActions(user);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -128,19 +135,19 @@ export default function Growth() {
 
           <div className="mt-6 grid gap-5 md:grid-cols-3">
 
-            <div className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+            {growthActions.map((action, index) => (
+            <div key={action.title} className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
 
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-2xl">
-                👥
+                {index === 0 ? "👥" : index === 1 ? "📱" : "💰"}
               </div>
 
               <h3 className="mt-5 text-lg font-bold">
-                Find Customers
+                {action.title}
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Local customers tak pahunchne aur naye buyers
-                find karne ke practical ways.
+                {action.description}
               </p>
 
               <button className="mt-5 font-semibold text-blue-700">
@@ -148,48 +155,7 @@ export default function Growth() {
               </button>
 
             </div>
-
-            <div className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-2xl">
-                💰
-              </div>
-
-              <h3 className="mt-5 text-lg font-bold">
-                Increase Sales
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Existing customers se repeat sales aur revenue
-                increase karne ke ideas.
-              </p>
-
-              <button className="mt-5 font-semibold text-green-700">
-                Learn More →
-              </button>
-
-            </div>
-
-            <div className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-2xl">
-                📱
-              </div>
-
-              <h3 className="mt-5 text-lg font-bold">
-                Digital Marketing
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                WhatsApp, social media aur online presence ka
-                better use karke customers tak pahunchna.
-              </p>
-
-              <button className="mt-5 font-semibold text-purple-700">
-                Learn More →
-              </button>
-
-            </div>
+            ))}
 
           </div>
 
@@ -203,80 +169,32 @@ export default function Growth() {
 
           <div className="mt-6 space-y-4">
 
-            <div className="flex items-center justify-between rounded-2xl border bg-white p-5 shadow-sm">
+            {growthActions.map((action, index) => (
+            <div key={`recommended-${action.title}`} className="flex items-center justify-between rounded-2xl border bg-white p-5 shadow-sm">
 
               <div className="flex items-center gap-4">
 
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-100">
-                  1
+                  {index + 1}
                 </div>
 
                 <div>
                   <p className="font-bold">
-                    Create a Google Business Profile
+                    {action.title}
                   </p>
                   <p className="text-sm text-slate-500">
-                    Local customers ko apna business discover karne dein.
+                    {action.description}
                   </p>
                 </div>
 
               </div>
 
               <span className="hidden text-sm font-semibold text-green-700 md:block">
-                High Impact
+                {action.impact}
               </span>
 
             </div>
-
-            <div className="flex items-center justify-between rounded-2xl border bg-white p-5 shadow-sm">
-
-              <div className="flex items-center gap-4">
-
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100">
-                  2
-                </div>
-
-                <div>
-                  <p className="font-bold">
-                    Build a customer list
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    Repeat customers ke liye contact information organize karein.
-                  </p>
-                </div>
-
-              </div>
-
-              <span className="hidden text-sm font-semibold text-blue-700 md:block">
-                Medium Effort
-              </span>
-
-            </div>
-
-            <div className="flex items-center justify-between rounded-2xl border bg-white p-5 shadow-sm">
-
-              <div className="flex items-center gap-4">
-
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-100">
-                  3
-                </div>
-
-                <div>
-                  <p className="font-bold">
-                    Explore new sales channels
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    Online aur local channels ke through business expand karein.
-                  </p>
-                </div>
-
-              </div>
-
-              <span className="hidden text-sm font-semibold text-orange-600 md:block">
-                Growth
-              </span>
-
-            </div>
+            ))}
 
           </div>
 
@@ -299,9 +217,7 @@ export default function Growth() {
           </div>
 
           <p className="mt-5 rounded-xl bg-orange-50 p-5 text-sm leading-6 text-slate-700">
-            Pehle existing customers ko retain karne par focus karein.
-            Repeat customers ke liye better service, offers aur
-            consistent communication business growth mein help kar sakte hain.
+            {growthActions[0].description}
           </p>
 
         </section>
