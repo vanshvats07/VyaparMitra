@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getStoredUserId } from "@/lib/clientUser";
-import { getGrowthActions } from "@/lib/businessRecommendations";
+import { getGrowthActions, getGrowthTip } from "@/lib/businessRecommendations";
 
 export default function Growth() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [error, setError] = useState("");
+  const [metrics, setMetrics] = useState([]);
+  const [selectedAction, setSelectedAction] = useState(null);
 
   useEffect(() => {
     const userId = getStoredUserId(true);
@@ -23,6 +25,16 @@ export default function Growth() {
       .then((data) => {
         if (data.success && data.user) {
           setUser(data.user);
+          const userMetricsId = getStoredUserId(true);
+          fetch(`/api/metrics/${userMetricsId}`)
+            .then((metricsResponse) => metricsResponse.json())
+            .then((metricsData) => {
+              if (metricsData.success) setMetrics(metricsData.metrics || []);
+            })
+            .catch((metricsError) => {
+              console.warn("Business metrics unavailable:", metricsError);
+              setMetrics([]);
+            });
         } else {
           router.push("/onboarding");
         }
@@ -41,7 +53,8 @@ export default function Growth() {
     );
   }
 
-  const growthActions = getGrowthActions(user);
+  const growthActions = getGrowthActions(user, metrics);
+  const growthTip = getGrowthTip(user, metrics);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -143,14 +156,17 @@ export default function Growth() {
               </div>
 
               <h3 className="mt-5 text-lg font-bold">
-                {action.title}
+                {action.cardTitle}
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 {action.description}
               </p>
 
-              <button className="mt-5 font-semibold text-blue-700">
+              <button
+                onClick={() => setSelectedAction(action)}
+                className="mt-5 font-semibold text-blue-700"
+              >
                 Learn More →
               </button>
 
@@ -170,7 +186,12 @@ export default function Growth() {
           <div className="mt-6 space-y-4">
 
             {growthActions.map((action, index) => (
-            <div key={`recommended-${action.title}`} className="flex items-center justify-between rounded-2xl border bg-white p-5 shadow-sm">
+            <button
+              type="button"
+              key={`recommended-${action.title}`}
+              onClick={() => setSelectedAction(action)}
+              className="flex w-full items-center justify-between rounded-2xl border bg-white p-5 text-left shadow-sm transition hover:bg-slate-50"
+            >
 
               <div className="flex items-center gap-4">
 
@@ -193,7 +214,7 @@ export default function Growth() {
                 {action.impact}
               </span>
 
-            </div>
+            </button>
             ))}
 
           </div>
@@ -211,16 +232,42 @@ export default function Growth() {
               </h2>
 
               <p className="text-sm text-slate-500">
-                Small improvements can create long-term growth.
+                {growthTip.subtitle}
               </p>
             </div>
           </div>
 
           <p className="mt-5 rounded-xl bg-orange-50 p-5 text-sm leading-6 text-slate-700">
-            {growthActions[0].description}
+            {growthTip.tip}
           </p>
 
         </section>
+
+        {selectedAction && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-6">
+            <section className="w-full max-w-xl rounded-2xl border bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="growth-action-title">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-green-700">
+                    {selectedAction.category} · {selectedAction.effort}
+                  </p>
+                  <h2 id="growth-action-title" className="mt-2 text-xl font-bold">
+                    {selectedAction.title}
+                  </h2>
+                </div>
+                <button type="button" onClick={() => setSelectedAction(null)} className="text-2xl text-slate-500" aria-label="Close details">
+                  ×
+                </button>
+              </div>
+              <p className="mt-5 whitespace-pre-line text-sm leading-6 text-slate-600">
+                {selectedAction.detail}
+              </p>
+              <button type="button" onClick={() => setSelectedAction(null)} className="mt-6 w-full rounded-xl bg-green-700 py-3 text-sm font-semibold text-white hover:bg-green-800">
+                Done
+              </button>
+            </section>
+          </div>
+        )}
 
       </div>
 

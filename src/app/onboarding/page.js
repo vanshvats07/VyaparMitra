@@ -39,7 +39,11 @@ export default function Onboarding() {
 
   const selectedState = sortedStates.find((state) => state.name === form.state);
   const availableDistricts = selectedState
-    ? sortedDistricts.filter((district) => district.stateId === selectedState.id)
+    ? sortedDistricts.filter(
+        (district) =>
+          district.stateId === selectedState.id ||
+          selectedState.districtIds?.includes(district.id)
+      )
     : [];
   const selectedDistrict = availableDistricts.find(
     (district) => district.name === form.district
@@ -49,12 +53,7 @@ export default function Onboarding() {
         .filter((block) => block.districtId === selectedDistrict.id)
         .sort((first, second) => first.name.localeCompare(second.name))
     : [];
-  const availableVillages =
-    districtVillages.length > 0
-      ? districtVillages
-      : selectedDistrict
-        ? [{ id: `district-${selectedDistrict.id}`, name: selectedDistrict.name }]
-        : [];
+  const availableVillages = districtVillages;
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -332,31 +331,48 @@ export default function Onboarding() {
                 Village / City
               </label>
 
-              <select
-                name="village"
-                value={form.village}
-                onChange={handleChange}
-                disabled={!form.district}
-                className="mt-2 w-full rounded-xl border bg-white px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-50"
-              >
-                <option value="">
-                  {form.district ? "Select village / city" : "Select district first"}
-                </option>
-                {form.village &&
-                  !availableVillages.some(
-                    (village) => village.name === form.village
-                  ) && (
-                  <option value={form.village}>{form.village}</option>
-                )}
-                {availableVillages.map((village) => (
-                  <option key={village.id} value={village.name}>
-                    {village.name}
+              {availableVillages.length > 0 ? (
+                <select
+                  name="village"
+                  value={form.village}
+                  onChange={handleChange}
+                  disabled={!form.district}
+                  className="mt-2 w-full rounded-xl border bg-white px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                >
+                  <option value="">
+                    {form.district ? "Select village / city" : "Select district first"}
                   </option>
-                ))}
-                <option value="__other__">Other village / city</option>
-              </select>
+                  {form.village &&
+                    !availableVillages.some(
+                      (village) => village.name === form.village
+                    ) && (
+                    <option value={form.village}>{form.village}</option>
+                  )}
+                  {availableVillages.map((village) => (
+                    <option key={village.id} value={village.name}>
+                      {village.name}
+                    </option>
+                  ))}
+                  <option value="__other__">Other village / city</option>
+                </select>
+              ) : (
+                <input
+                  name="village"
+                  value={form.village}
+                  onChange={handleChange}
+                  disabled={!form.district}
+                  placeholder={form.district ? "Enter village / town / city" : "Select district first"}
+                  className="mt-2 w-full rounded-xl border bg-white px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                />
+              )}
 
-              {isCustomVillage && (
+              {form.district && availableVillages.length === 0 && (
+                <p className="mt-2 text-xs text-slate-500">
+                  No verified village or town list is available for this district. Enter the locality manually.
+                </p>
+              )}
+
+              {isCustomVillage && availableVillages.length > 0 && (
                 <input
                   name="customVillage"
                   value={customVillage || form.village}
