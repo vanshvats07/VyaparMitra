@@ -11,6 +11,9 @@ export default function AIGuide() {
   const [answer, setAnswer] = useState("");
   const [answerError, setAnswerError] = useState("");
   const [asking, setAsking] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
+  const [recommendationError, setRecommendationError] = useState("");
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   useEffect(() => {
     const userId =
@@ -64,6 +67,35 @@ export default function AIGuide() {
       setAnswerError(error.message || "Could not generate guidance.");
     } finally {
       setAsking(false);
+    }
+  }
+
+  async function handleRecommendations() {
+    if (!userId) return;
+
+    setLoadingRecommendations(true);
+    setRecommendationError("");
+
+    try {
+      const response = await fetch("/api/recommendations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Could not generate recommendations.");
+      }
+
+      setRecommendations(data.recommendations || []);
+    } catch (error) {
+      setRecommendationError(
+        error.message || "Could not generate recommendations."
+      );
+      setRecommendations([]);
+    } finally {
+      setLoadingRecommendations(false);
     }
   }
 
@@ -279,9 +311,52 @@ export default function AIGuide() {
               {asking ? "Thinking..." : "Ask AI Guide"}
             </button>
 
+            <button
+              type="button"
+              onClick={handleRecommendations}
+              disabled={loadingRecommendations}
+              className="ml-3 rounded-xl border border-green-700 px-5 py-3 text-sm font-semibold text-green-700 transition hover:bg-green-50 disabled:opacity-60"
+            >
+              {loadingRecommendations
+                ? "Preparing recommendations..."
+                : "Get Recommendations"}
+            </button>
+
             {answer && (
               <div className="whitespace-pre-wrap rounded-xl bg-slate-50 p-5 text-sm leading-7 text-slate-700">
                 {answer}
+              </div>
+            )}
+
+            {recommendationError && (
+              <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {recommendationError}
+              </p>
+            )}
+
+            {recommendations.length > 0 && (
+              <div className="space-y-3">
+                {recommendations.map((recommendation) => (
+                  <article
+                    key={`${recommendation.title}-${recommendation.priority}`}
+                    className="rounded-xl border bg-slate-50 p-5"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <h3 className="font-bold text-slate-900">
+                        {recommendation.title}
+                      </h3>
+                      <span className="text-xs font-semibold uppercase text-green-700">
+                        {recommendation.priority}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-slate-700">
+                      {recommendation.description}
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Why this fits: {recommendation.reason}
+                    </p>
+                  </article>
+                ))}
               </div>
             )}
           </form>

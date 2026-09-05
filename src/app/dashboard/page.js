@@ -8,6 +8,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [metrics, setMetrics] = useState(null);
+  const [businessMetrics, setBusinessMetrics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -30,6 +31,14 @@ export default function Dashboard() {
 
       setUser(userData.user);
       setMetrics(metricsData.metrics);
+
+      const historyResponse = await fetch(`/api/metrics/${id}`);
+      const historyData = await historyResponse.json();
+      if (!historyResponse.ok || !historyData.success) {
+        throw new Error(historyData.message || "Failed to load business history");
+      }
+
+      setBusinessMetrics(historyData.metrics || []);
     } catch (loadError) {
       console.error("Failed to load dashboard data:", loadError);
       setError(
@@ -309,15 +318,19 @@ export default function Dashboard() {
             <div className="flex flex-col justify-between rounded-2xl border bg-white p-6 shadow-sm">
 
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl text-green-700">
-                ✓
+                {metrics?.profileCompletion === 100 ? "✓" : "!"}
               </div>
 
               <h2 className="mt-4 text-center text-xl font-bold">
-                Profile Ready
+                {metrics?.profileCompletion === 100
+                  ? "Profile Ready"
+                  : "Profile Incomplete"}
               </h2>
 
               <p className="mt-2 text-center text-sm leading-6 text-slate-600">
-                आपकी business information save हो चुकी है।
+                {metrics
+                  ? `${metrics.profileCompletion}% of your business information is complete.`
+                  : "Business profile status is being checked."}
               </p>
 
               <button
@@ -349,7 +362,7 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-8">
-                <BusinessChart metrics={metrics} />
+                <BusinessChart data={businessMetrics} />
               </div>
 
             </div>
