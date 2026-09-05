@@ -1,90 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-const schemes = [
-  {
-    name: "Pradhan Mantri Mudra Yojana",
-    type: "Central Government",
-    category: "Business Loan",
-    description:
-      "छोटे व्यवसायों और नए entrepreneurs को business शुरू या expand करने के लिए loan की सुविधा।",
-    benefit: "₹10 लाख तक का loan",
-    eligibility: "Small business owners और entrepreneurs",
-    documents: "Aadhaar, PAN, Bank Account",
-    status: "Active",
-  },
-  {
-    name: "PMFME Scheme",
-    type: "Central Government",
-    category: "Food Processing",
-    description:
-      "Food processing business शुरू करने या existing unit को upgrade करने के लिए financial support।",
-    benefit: "35% तक credit linked subsidy",
-    eligibility: "Food processing businesses",
-    documents: "Aadhaar, PAN, Business Documents",
-    status: "Active",
-  },
-  {
-    name: "Dairy Development Scheme",
-    type: "Uttar Pradesh",
-    category: "Dairy",
-    description:
-      "दूध उत्पादन और dairy infrastructure को बढ़ावा देने के लिए financial assistance।",
-    benefit: "Business और equipment support",
-    eligibility: "Eligible dairy farmers और entrepreneurs",
-    documents: "Aadhaar, Bank Account, Land/Business Documents",
-    status: "Active",
-  },
-  {
-    name: "PMEGP",
-    type: "Central Government",
-    category: "New Business",
-    description:
-      "नए micro enterprises शुरू करने के लिए credit linked subsidy और financial assistance।",
-    benefit: "Subsidy based business support",
-    eligibility: "New entrepreneurs",
-    documents: "Aadhaar, PAN, Project Report",
-    status: "Active",
-  },
-  {
-    name: "Kisan Credit Card",
-    type: "Central Government",
-    category: "Agriculture",
-    description:
-      "Agriculture और allied activities के लिए किसानों को आसान credit facility।",
-    benefit: "Flexible agricultural credit",
-    eligibility: "Eligible farmers",
-    documents: "Aadhaar, Land Documents, Bank Details",
-    status: "Active",
-  },
-  {
-    name: "Stand Up India",
-    type: "Central Government",
-    category: "Business Loan",
-    description:
-      "Eligible entrepreneurs को नया business शुरू करने के लिए bank loan support।",
-    benefit: "₹10 लाख से ₹1 करोड़ तक",
-    eligibility: "Eligible entrepreneurs",
-    documents: "Identity, Address और Business Documents",
-    status: "Active",
-  },
-];
 
 export default function Schemes() {
   const router = useRouter();
 
+  const [schemes, setSchemes] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const query = category === "All" ? "" : `?category=${encodeURIComponent(category)}`;
+
+    fetch(`/api/schemes${query}`)
+      .then(async (response) => {
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "Unable to fetch schemes");
+        }
+
+        return data.schemes || [];
+      })
+      .then((loadedSchemes) => {
+        setSchemes(loadedSchemes);
+        setErrorMessage("");
+      })
+      .catch((error) => {
+        console.error("Failed to load schemes:", error);
+        setSchemes([]);
+        setErrorMessage("Government scheme information is currently unavailable.");
+      })
+      .finally(() => setIsLoading(false));
+  }, [category]);
 
   const categories = [
     "All",
-    "Business Loan",
-    "Dairy",
-    "Agriculture",
-    "Food Processing",
-    "New Business",
+    ...new Set(schemes.map((scheme) => scheme.category).filter(Boolean)),
   ];
 
   const filteredSchemes = schemes.filter((scheme) => {
@@ -183,7 +138,15 @@ export default function Schemes() {
             </div>
           </div>
 
-          {filteredSchemes.length === 0 ? (
+          {isLoading ? (
+            <div className="rounded-2xl border bg-white p-10 text-center">
+              <p className="text-lg font-semibold">Loading schemes...</p>
+            </div>
+          ) : errorMessage ? (
+            <div className="rounded-2xl border bg-white p-10 text-center">
+              <p className="text-lg font-semibold">{errorMessage}</p>
+            </div>
+          ) : filteredSchemes.length === 0 ? (
             <div className="rounded-2xl border bg-white p-10 text-center">
               <p className="text-lg font-semibold">
                 No schemes found
@@ -206,7 +169,7 @@ export default function Schemes() {
 
                     <div>
                       <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                        {scheme.status}
+                        {scheme.state || "Government scheme"}
                       </span>
 
                       <h3 className="mt-4 text-xl font-bold text-slate-900">
@@ -214,7 +177,7 @@ export default function Schemes() {
                       </h3>
 
                       <p className="mt-1 text-sm text-slate-500">
-                        {scheme.type}
+                        {scheme.category || "Category not specified"}
                       </p>
                     </div>
 
@@ -236,7 +199,7 @@ export default function Schemes() {
                       </p>
 
                       <p className="mt-1 text-sm font-semibold text-slate-900">
-                        {scheme.benefit}
+                        {scheme.benefits?.join(", ") || "Benefits pending verification"}
                       </p>
                     </div>
 
@@ -259,40 +222,35 @@ export default function Schemes() {
                     </p>
 
                     <p className="mt-1 text-sm text-slate-600">
-                      {scheme.eligibility}
+                      {scheme.eligibility?.join(", ") || "Eligibility details pending verification"}
                     </p>
 
                     <p className="mt-4 text-sm font-semibold text-slate-900">
-                      Required Documents
+                      Official Information
                     </p>
 
                     <p className="mt-1 text-sm text-slate-600">
-                      {scheme.documents}
+                      {scheme.officialUrl
+                        ? "Use the official source for current details."
+                        : "Official source link pending verification."}
                     </p>
 
                   </div>
 
-                  <div className="mt-6 flex gap-3">
-
-                    <button
-                      onClick={() =>
-                        alert("Detailed scheme information will be added soon.")
-                      }
-                      className="flex-1 rounded-lg border border-green-700 px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50"
+                  {scheme.officialUrl ? (
+                    <a
+                      href={scheme.officialUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-6 block rounded-lg bg-green-700 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-green-800"
                     >
-                      View Details
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        alert("Official application link will be added soon.")
-                      }
-                      className="flex-1 rounded-lg bg-green-700 px-4 py-3 text-sm font-semibold text-white hover:bg-green-800"
-                    >
-                      Apply Now
-                    </button>
-
-                  </div>
+                      Open Official Information
+                    </a>
+                  ) : (
+                    <p className="mt-6 rounded-lg border border-slate-200 px-4 py-3 text-center text-sm text-slate-500">
+                      Official link pending verification
+                    </p>
+                  )}
 
                 </div>
               ))}

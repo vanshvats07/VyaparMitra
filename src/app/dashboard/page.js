@@ -3,24 +3,20 @@
 import BusinessChart from "./components/BusinessChart";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { calculateWhatIf, getWhatIfImpacts } from "@/lib/whatIf";
 
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [metrics, setMetrics] = useState([]);
+  const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [salesDrop, setSalesDrop] = useState(false);
-  const [bulkBuyers, setBulkBuyers] = useState(false);
 
   const loadUser = async (id) => {
     try {
       const [userResponse, metricsResponse] = await Promise.all([
         fetch(`/api/users/${id}`),
-        fetch(`/api/metrics/${id}`),
+        fetch(`/api/users/${id}/metrics`),
       ]);
-
       const userData = await userResponse.json();
       const metricsData = await metricsResponse.json();
 
@@ -33,15 +29,16 @@ export default function Dashboard() {
       }
 
       setUser(userData.user);
-      setMetrics(metricsData.metrics || []);
-    } catch (err) {
-      console.error("Failed to load user from API:", err);
+      setMetrics(metricsData.metrics);
+    } catch (loadError) {
+      console.error("Failed to load dashboard data:", loadError);
       setError(
-        err.message ||
+        loadError.message ||
           "Could not load your business profile. Please check your connection and try again."
       );
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -51,9 +48,7 @@ export default function Dashboard() {
 
     if (!userId) {
       const timer = setTimeout(() => {
-        setError(
-          "No user profile found. Please complete the onboarding process first."
-        );
+        setError("No user profile found. Please complete the onboarding process first.");
         setLoading(false);
       }, 0);
       return () => clearTimeout(timer);
@@ -125,40 +120,6 @@ export default function Dashboard() {
       </main>
     );
   }
-
-  const latestMetric = metrics[metrics.length - 1];
-  const firstMetric = metrics[0];
-  const totalSales = metrics.reduce((total, metric) => total + metric.sales, 0);
-  const totalProfit = metrics.reduce((total, metric) => total + metric.profit, 0);
-  const salesGrowth =
-    firstMetric && firstMetric.sales > 0
-      ? ((latestMetric.sales - firstMetric.sales) / firstMetric.sales) * 100
-      : 0;
-  const profitMargin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
-  const healthScore = metrics.length
-    ? Math.max(0, Math.min(100, Math.round(50 + salesGrowth + profitMargin)))
-    : 0;
-  const healthLabel =
-    healthScore >= 70
-      ? "Strong Performance"
-      : healthScore >= 40
-        ? "Needs Attention"
-        : "At Risk";
-  const cashFlowLabel = totalProfit >= 0 ? "Positive" : "Negative";
-  const currentCashBuffer = Number(user.budget) || 0;
-  const projectedMaxLoss = Math.round((latestMetric?.sales || 0) * 0.2 * 3);
-  const riskPercent = currentCashBuffer
-    ? Math.min(100, Math.round((projectedMaxLoss / currentCashBuffer) * 100))
-    : 0;
-  const riskLabel =
-    riskPercent > 50 ? "High" : riskPercent > 20 ? "Moderate" : "Low";
-  const whatIfImpacts = getWhatIfImpacts(latestMetric?.sales || 0);
-  const projectedBalance = calculateWhatIf({
-    baseBalance: currentCashBuffer,
-    latestSales: latestMetric?.sales || 0,
-    salesDrop,
-    bulkBuyers,
-  });
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 text-slate-900">
@@ -347,53 +308,17 @@ export default function Dashboard() {
 
             <div className="flex flex-col justify-between rounded-2xl border bg-white p-6 shadow-sm">
 
-              <div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-100 text-xl font-bold text-green-700">
-                    {user.name ? user.name.charAt(0).toUpperCase() : "👤"}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-base font-bold text-slate-900">
-                      {user.name}
-                    </h2>
-                    <p className="truncate text-xs text-slate-500">
-                      📞 {user.phone}
-                    </p>
-                  </div>
-
-                  <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
-                    Profile Ready
-                  </span>
-                </div>
-
-                <div className="mt-5 space-y-2.5 border-t pt-4 text-xs">
-
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Location:</span>
-                    <span className="max-w-[150px] truncate text-right font-semibold text-slate-800">
-                      {user.village ? `${user.village}, ` : ""}{user.district}, {user.state}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Experience:</span>
-                    <span className="font-semibold text-slate-800">
-                      {user.experience || "Beginner"}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Language:</span>
-                    <span className="font-semibold text-slate-800">
-                      {user.language === "hi" ? "हिंदी (Hindi)" : "English"}
-                    </span>
-                  </div>
-
-                </div>
-
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl text-green-700">
+                ✓
               </div>
+
+              <h2 className="mt-4 text-center text-xl font-bold">
+                Profile Ready
+              </h2>
+
+              <p className="mt-2 text-center text-sm leading-6 text-slate-600">
+                आपकी business information save हो चुकी है।
+              </p>
 
               <button
                 onClick={() => router.push("/onboarding?edit=1")}
@@ -432,7 +357,7 @@ export default function Dashboard() {
             <div className="rounded-2xl border bg-white p-6 shadow-sm">
 
               <h2 className="text-xl font-bold">
-                Business Health
+                Business Readiness
               </h2>
 
               <div className="mt-8 flex justify-center">
@@ -442,7 +367,7 @@ export default function Dashboard() {
                   <div className="text-center">
 
                     <p className="text-3xl font-bold text-green-700">
-                      {healthScore}
+                      {metrics?.readinessScore ?? "--"}
                     </p>
 
                     <p className="text-xs text-slate-500">
@@ -456,38 +381,38 @@ export default function Dashboard() {
               </div>
 
               <p className="mt-5 text-center font-semibold text-green-700">
-                {healthLabel}
+                {metrics?.readinessLabel || "Unavailable"}
               </p>
 
               <div className="mt-6 space-y-4 border-t pt-5 text-sm">
 
                 <div className="flex justify-between">
                   <span className="text-slate-500">
-                    Sales Growth
+                    Profile Completion
                   </span>
 
                   <span className="font-semibold text-green-700">
-                    {salesGrowth >= 0 ? "+" : ""}{salesGrowth.toFixed(1)}%
+                    {metrics ? `${metrics.profileCompletion}%` : "--"}
                   </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-slate-500">
-                    Profit Margin
+                    Available Budget
                   </span>
 
                   <span className="font-semibold text-green-700">
-                    {profitMargin >= 0 ? "+" : ""}{profitMargin.toFixed(1)}%
+                    ₹{Number(user.budget).toLocaleString("en-IN")}
                   </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-slate-500">
-                    Cash Flow
+                    Experience
                   </span>
 
                   <span className="font-semibold">
-                    {cashFlowLabel}
+                    {user.experience || "Not provided"}
                   </span>
                 </div>
 
@@ -514,88 +439,23 @@ export default function Dashboard() {
               </div>
 
               <p className="mt-2 text-sm text-slate-600">
-                अलग-अलग business situations को select करके
-                उनका possible financial impact देखें।
+                Revenue and expense information is needed before financial
+                scenarios can be calculated.
               </p>
-
-              <div className="mt-6 space-y-3">
-
-                <label className="flex cursor-pointer items-center justify-between rounded-xl border p-4 transition hover:bg-slate-50">
-
-                  <div className="flex gap-3">
-
-                    <input
-                      type="checkbox"
-                      checked={salesDrop}
-                      onChange={(e) => setSalesDrop(e.target.checked)}
-                      className="mt-1"
-                    />
-
-                    <div>
-
-                      <p className="font-semibold">
-                        Sales 20% कम हो जाए
-                      </p>
-
-                      <p className="text-xs text-slate-500">
-                        Seasonal demand कम होने पर
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <span className="font-semibold text-red-600">
-                    -₹{whatIfImpacts.salesDrop.toLocaleString("en-IN")}
-                  </span>
-
-                </label>
-
-                <label className="flex cursor-pointer items-center justify-between rounded-xl border p-4 transition hover:bg-slate-50">
-
-                  <div className="flex gap-3">
-
-                    <input
-                      type="checkbox"
-                      checked={bulkBuyers}
-                      onChange={(e) => setBulkBuyers(e.target.checked)}
-                      className="mt-1"
-                    />
-
-                    <div>
-
-                      <p className="font-semibold">
-                        5 नए bulk buyers मिलें
-                      </p>
-
-                      <p className="text-xs text-slate-500">
-                        Sales बढ़ने की संभावना
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <span className="font-semibold text-green-700">
-                    +₹{whatIfImpacts.bulkBuyers.toLocaleString("en-IN")}
-                  </span>
-
-                </label>
-
-              </div>
 
               <div className="mt-6 border-t pt-5">
 
                 <p className="text-sm text-slate-500">
-                  Projected Balance
+                  Simulator Status
                 </p>
 
-                <p className="mt-1 text-3xl font-bold">
-                  ₹{projectedBalance.toLocaleString("en-IN")}
+                <p className="mt-1 text-xl font-bold">
+                  More business data needed
                 </p>
 
                 <p className="mt-2 text-xs text-slate-500">
-                  Selected scenarios ke according estimated balance.
+                  No financial estimate is shown without actual revenue and
+                  expense records.
                 </p>
 
               </div>
@@ -625,7 +485,7 @@ export default function Dashboard() {
                   </p>
 
                   <p className="mt-2 text-xl font-bold">
-                    ₹{currentCashBuffer.toLocaleString("en-IN")}
+                    Unavailable
                   </p>
 
                 </div>
@@ -637,7 +497,7 @@ export default function Dashboard() {
                   </p>
 
                   <p className="mt-2 text-xl font-bold text-red-600">
-                    -₹{projectedMaxLoss.toLocaleString("en-IN")}
+                    Unavailable
                   </p>
 
                 </div>
@@ -649,21 +509,18 @@ export default function Dashboard() {
                 <div className="flex justify-between text-sm">
 
                   <span>
-                    Risk Level: {riskLabel}
+                    Risk Level: Unavailable
                   </span>
 
                   <span className="text-red-600">
-                    {riskPercent}%
+                    --
                   </span>
 
                 </div>
 
                 <div className="mt-2 h-2 rounded-full bg-slate-200">
 
-                  <div
-                    className="h-2 rounded-full bg-red-500"
-                    style={{ width: `${riskPercent}%` }}
-                  />
+                  <div className="h-2 w-0 rounded-full bg-red-500" />
 
                 </div>
 
@@ -672,19 +529,17 @@ export default function Dashboard() {
               <div className="mt-6 space-y-3 text-sm text-slate-600">
 
                 <p>
-                  {riskPercent <= 100
-                    ? "✓ आपका cash buffer projected loss को handle कर सकता है।"
-                    : "⚠️ आपका projected loss available budget से अधिक है।"}
+                  Cash flow data is not available for this profile.
                 </p>
 
                 <p>
-                  💡 Variable costs को कम करने से risk घट सकता है।
+                  Add revenue and expense records to calculate risk.
                 </p>
 
               </div>
 
               <button className="mt-6 w-full rounded-lg border border-red-500 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50">
-                View Detailed Forecast
+                Detailed Forecast Needs More Data
               </button>
 
             </div>
