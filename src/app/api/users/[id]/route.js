@@ -126,7 +126,7 @@ export async function PATCH(request, { params }) {
     }
 
     const user = await User.findByIdAndUpdate(id, validationResult.data, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     }).select("-__v");
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getStoredUserId } from "@/lib/clientUser";
 
 export default function AIGuide() {
   const router = useRouter();
@@ -16,9 +17,7 @@ export default function AIGuide() {
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   useEffect(() => {
-    const userId =
-      localStorage.getItem("vyaparMitraUserId") ||
-      localStorage.getItem("userId");
+    const userId = getStoredUserId(true);
 
     if (!userId) {
       router.push("/onboarding");

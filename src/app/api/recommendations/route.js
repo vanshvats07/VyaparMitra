@@ -6,24 +6,11 @@ import User from "@/models/User";
 import BusinessMetric from "@/models/BusinessMetric";
 import GovernmentScheme from "@/models/GovernmentScheme";
 import { calculateBusinessMetrics } from "@/lib/calculations/businessMetrics";
-import { generateGeminiText } from "@/lib/gemini";
+import { generateGeminiText, parseGeminiJson } from "@/lib/gemini";
 import {
   recommendationRequestSchema,
   recommendationResponseSchema,
 } from "@/lib/validations/recommendation";
-
-function getJsonFromModelText(text) {
-  const withoutCodeFence = text
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/, "")
-    .trim();
-
-  try {
-    return JSON.parse(withoutCodeFence);
-  } catch {
-    return null;
-  }
-}
 
 function buildRecommendationPrompt({ user, schemes, history, calculatedMetrics }) {
   return `You are a practical business advisor for small businesses in India.
@@ -161,7 +148,7 @@ export async function POST(request) {
       );
     }
 
-    const responseData = getJsonFromModelText(result.text);
+    const responseData = parseGeminiJson(result.text);
     const validatedResponse = recommendationResponseSchema.safeParse(responseData);
     if (!validatedResponse.success) {
       return NextResponse.json(

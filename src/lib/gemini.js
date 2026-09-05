@@ -1,3 +1,16 @@
+export function parseGeminiJson(text) {
+  const withoutCodeFence = text
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
+
+  try {
+    return JSON.parse(withoutCodeFence);
+  } catch {
+    return null;
+  }
+}
+
 export async function generateGeminiText(
   prompt,
   { timeoutMs = 15000, responseMimeType } = {}

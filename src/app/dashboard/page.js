@@ -3,6 +3,7 @@
 import BusinessChart from "./components/BusinessChart";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getStoredUserId } from "@/lib/clientUser";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -72,9 +73,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const userId =
-      localStorage.getItem("userId") ||
-      localStorage.getItem("vyaparMitraUserId");
+    const userId = getStoredUserId();
 
     if (!userId) {
       const timer = setTimeout(() => {
@@ -94,9 +93,7 @@ export default function Dashboard() {
     setInsights(null);
     setInsightsError("");
     setInsightsLoading(true);
-    const userId =
-      localStorage.getItem("userId") ||
-      localStorage.getItem("vyaparMitraUserId");
+    const userId = getStoredUserId();
 
     if (!userId) {
       setError(

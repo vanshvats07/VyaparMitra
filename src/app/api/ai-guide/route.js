@@ -13,7 +13,6 @@ import { generateGeminiText } from "@/lib/gemini";
  */
 export async function POST(request) {
   try {
-    // 1. Parse JSON body
     let body;
     try {
       body = await request.json();
@@ -27,7 +26,6 @@ export async function POST(request) {
       );
     }
 
-    // 2. Validate input fields with Zod
     const validationResult = aiGuideSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
@@ -42,7 +40,6 @@ export async function POST(request) {
 
     const { userId, question } = validationResult.data;
 
-    // 3. Validate MongoDB ObjectId format
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return NextResponse.json(
         {
@@ -60,10 +57,8 @@ export async function POST(request) {
       );
     }
 
-    // 4. Connect to database
     await connectDB();
 
-    // 5. Load user business profile (exclude internal fields)
     const user = await User.findById(userId)
       .select("businessIdea businessCategory budget experience state district language")
       .lean();
@@ -77,7 +72,6 @@ export async function POST(request) {
       );
     }
 
-    // 6. Construct structured context object
     const businessProfile = {
       businessIdea: user.businessIdea,
       businessCategory: user.businessCategory || "General",

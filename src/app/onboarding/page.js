@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getStoredUserId } from "@/lib/clientUser";
 
 export default function Onboarding() {
   const router = useRouter();
@@ -27,9 +28,7 @@ export default function Onboarding() {
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.get("edit") !== "1") return;
 
-    const userId =
-      localStorage.getItem("userId") ||
-      localStorage.getItem("vyaparMitraUserId");
+    const userId = getStoredUserId();
 
     if (!userId) return;
 

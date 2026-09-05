@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getStoredUserId } from "@/lib/clientUser";
 
 export default function Growth() {
   const router = useRouter();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const userId =
-      localStorage.getItem("vyaparMitraUserId") ||
-      localStorage.getItem("userId");
+    const userId = getStoredUserId(true);
 
     if (!userId) {
       router.push("/onboarding");

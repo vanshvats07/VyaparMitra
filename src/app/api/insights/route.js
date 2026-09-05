@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { getAuthenticatedUserId } from "@/lib/auth";
-import { generateGeminiText } from "@/lib/gemini";
+import { generateGeminiText, parseGeminiJson } from "@/lib/gemini";
 import User from "@/models/User";
 import BusinessMetric from "@/models/BusinessMetric";
 import GovernmentScheme from "@/models/GovernmentScheme";
@@ -11,19 +11,6 @@ import {
   insightsRequestSchema,
   insightsResponseSchema,
 } from "@/lib/validations/insights";
-
-function parseModelJson(text) {
-  const withoutCodeFence = text
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/, "")
-    .trim();
-
-  try {
-    return JSON.parse(withoutCodeFence);
-  } catch {
-    return null;
-  }
-}
 
 function buildInsightsPrompt({ user, schemes, history, calculatedMetrics }) {
   return `You are a practical business advisor for small businesses in India.
@@ -160,7 +147,7 @@ export async function GET(request) {
       );
     }
 
-    const responseData = parseModelJson(result.text);
+    const responseData = parseGeminiJson(result.text);
     const validatedResponse = insightsResponseSchema.safeParse(responseData);
     if (!validatedResponse.success) {
       return NextResponse.json(
