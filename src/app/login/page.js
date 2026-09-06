@@ -27,7 +27,6 @@ export default function LoginPage() {
     event.preventDefault();
     setLoading(true);
     setErrorMessage("");
-
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -39,7 +38,6 @@ export default function LoginPage() {
       if (!response.ok || !data.success) {
         throw new Error(data.message || "Invalid phone number or password.");
       }
-
       router.replace("/dashboard");
     } catch (error) {
       setErrorMessage(error.message || "Unable to log in right now. Please try again.");
@@ -86,19 +84,7 @@ export default function LoginPage() {
             />
           </label>
 
-          <label className="mt-5 block text-sm font-semibold text-slate-700">
-            Password
-            <input
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              autoComplete="current-password"
-              placeholder="Enter your password"
-              className="mt-2 w-full rounded-xl border px-4 py-3 font-normal outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
-              required
-            />
-          </label>
+          <label className="mt-5 block text-sm font-semibold text-slate-700">Password<input name="password" type="password" value={form.password} onChange={handleChange} autoComplete="current-password" placeholder="Enter your password" className="mt-2 w-full rounded-xl border px-4 py-3 font-normal outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100" required /></label>
 
           {errorMessage && (
             <p className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{errorMessage}</p>

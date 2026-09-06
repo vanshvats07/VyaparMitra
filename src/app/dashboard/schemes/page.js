@@ -1,7 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+const CATEGORIES = ["All", "Agriculture", "Dairy", "Food Processing", "Retail", "MSME", "Self Employment", "Women Entrepreneurs", "Other"];
+
+function readJson(response, endpoint) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("application/json")) throw new Error(`Request to ${endpoint} returned an invalid response.`);
+  return response.json();
+}
+
+function Detail({ label, children }) {
+  return <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-sm leading-6 text-slate-700">{children || "Data unavailable"}</p></div>;
+}
 
 export default function Schemes() {
   const router = useRouter();
@@ -12,43 +24,37 @@ export default function Schemes() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [isDemo, setIsDemo] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const loadSchemes = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage("");
+    try {
+      const response = await fetch("/api/government-schemes", { cache: "no-store" });
+      const data = await readJson(response, "/api/government-schemes");
+      if (!response.ok || !data.success || !Array.isArray(data.schemes)) throw new Error(data.message || "Unable to fetch schemes");
+      setSchemes(data.schemes);
+      setIsDemo(Boolean(data.isDemo));
+      setLastUpdated(data.lastUpdated || null);
+    } catch (error) {
+      console.error("Failed to load government schemes:", error);
+      setSchemes([]);
+      setErrorMessage("Government scheme information is currently unavailable. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const query = category === "All" ? "" : `?category=${encodeURIComponent(category)}`;
-
-    fetch(`/api/schemes${query}`)
-      .then(async (response) => {
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || "Unable to fetch schemes");
-        }
-
-        return data.schemes || [];
-      })
-      .then((loadedSchemes) => {
-        setSchemes(loadedSchemes);
-        setErrorMessage("");
-      })
-      .catch((error) => {
-        console.error("Failed to load schemes:", error);
-        setSchemes([]);
-        setErrorMessage("Government scheme information is currently unavailable.");
-      })
-      .finally(() => setIsLoading(false));
-  }, [category]);
-
-  const categories = [
-    "All",
-    ...new Set(schemes.map((scheme) => scheme.category).filter(Boolean)),
-  ];
+    const timer = setTimeout(() => loadSchemes(), 0);
+    return () => clearTimeout(timer);
+  }, [loadSchemes]);
 
   const filteredSchemes = schemes.filter((scheme) => {
     const matchesSearch =
-      scheme.name.toLowerCase().includes(search.toLowerCase()) ||
-      scheme.description.toLowerCase().includes(search.toLowerCase());
+      [scheme.name, scheme.description, scheme.category, scheme.ministry].join(" ").toLowerCase().includes(search.toLowerCase());
 
-    const matchesCategory =
-      category === "All" || scheme.category === category;
+    const matchesCategory = category === "All" || [scheme.category, ...(scheme.categoryTags || [])].some((value) => value?.toLowerCase() === category.toLowerCase());
 
     return matchesSearch && matchesCategory;
   });
@@ -90,10 +96,26 @@ export default function Schemes() {
             Government Schemes
           </h1>
 
+          <div className="mt-4">
+            <span className={`rounded-full px-3 py-2 text-xs font-bold ${isDemo ? "border border-amber-300 bg-amber-50 text-amber-800" : "border border-green-200 bg-green-50 text-green-700"}`}>
+              {isDemo ? "Not Available — Demo Data" : "Live Government Data"}
+            </span>
+          </div>
+
           <p className="mt-3 max-w-2xl text-slate-600">
             अपने business और location के अनुसार relevant सरकारी
             योजनाएं और financial support खोजें।
           </p>
+
+          {isDemo ? (
+            <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              Live government scheme data is currently unavailable. Showing demo information for preview purposes.
+            </p>
+          ) : (
+            <p className="mt-3 text-xs text-slate-500">
+              Live source data{lastUpdated ? ` • Last updated: ${new Date(lastUpdated).toLocaleString("en-IN")}` : ""}
+            </p>
+          )}
         </section>
 
         <section className="mt-8 rounded-2xl border bg-white p-5 shadow-sm">
@@ -113,12 +135,16 @@ export default function Schemes() {
               onChange={(e) => setCategory(e.target.value)}
               className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-green-600"
             >
-              {categories.map((item) => (
+              {CATEGORIES.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
               ))}
             </select>
+
+            <button onClick={loadSchemes} disabled={isLoading} className="rounded-xl border border-green-700 px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">
+              {isLoading ? "Refreshing..." : "Refresh"}
+            </button>
 
           </div>
 
@@ -169,7 +195,7 @@ export default function Schemes() {
 
                     <div>
                       <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                        {scheme.state || "Government scheme"}
+                        Potentially relevant
                       </span>
 
                       <h3 className="mt-4 text-xl font-bold text-slate-900">
@@ -177,7 +203,7 @@ export default function Schemes() {
                       </h3>
 
                       <p className="mt-1 text-sm text-slate-500">
-                        {scheme.category || "Category not specified"}
+                        {scheme.category || "Category not specified"} {scheme.ministry ? `• ${scheme.ministry}` : ""}
                       </p>
                     </div>
 
@@ -191,6 +217,10 @@ export default function Schemes() {
                     {scheme.description}
                   </p>
 
+                  <p className="mt-4 rounded-xl border border-green-100 bg-green-50 p-3 text-sm leading-6 text-green-900">
+                    <strong>Why this may be relevant:</strong> {scheme.whyRelevant || "Potentially relevant; compare the official eligibility criteria with your profile."}
+                  </p>
+
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
 
                     <div className="rounded-xl bg-slate-50 p-4">
@@ -199,17 +229,17 @@ export default function Schemes() {
                       </p>
 
                       <p className="mt-1 text-sm font-semibold text-slate-900">
-                        {scheme.benefits?.join(", ") || "Benefits pending verification"}
+                        {scheme.benefits?.join(" ") || "Benefits pending verification"}
                       </p>
                     </div>
 
                     <div className="rounded-xl bg-slate-50 p-4">
                       <p className="text-xs text-slate-500">
-                        Category
+                        Required Documents
                       </p>
 
                       <p className="mt-1 text-sm font-semibold text-slate-900">
-                        {scheme.category}
+                        {scheme.documents?.join(", ") || "Documents pending verification"}
                       </p>
                     </div>
 
@@ -226,6 +256,14 @@ export default function Schemes() {
                     </p>
 
                     <p className="mt-4 text-sm font-semibold text-slate-900">
+                      Application Process
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-600">
+                      {scheme.applicationProcess || "Verify the current application process on the official portal."}
+                    </p>
+
+                    <p className="mt-4 text-sm font-semibold text-slate-900">
                       Official Information
                     </p>
 
@@ -236,6 +274,8 @@ export default function Schemes() {
                     </p>
 
                   </div>
+
+                  {isDemo && <p className="mt-5 text-xs font-semibold text-amber-800">Demo information — verify details on the official government portal.</p>}
 
                   {scheme.officialUrl ? (
                     <a

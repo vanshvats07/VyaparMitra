@@ -79,10 +79,7 @@ export async function POST(request) {
     const password = profileData.password;
     delete profileData.password;
     delete profileData.confirmPassword;
-    const user = await User.create({
-      ...profileData,
-      passwordHash: await hashPassword(password),
-    });
+    const user = await User.create({ ...profileData, passwordHash: await hashPassword(password) });
 
     const response = NextResponse.json(
       {

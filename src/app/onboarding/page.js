@@ -70,7 +70,7 @@ export default function Onboarding() {
       })
       .catch(() => {});
 
-    if (!isEditMode) return;
+    if (!isEditMode) return undefined;
 
     const timer = setTimeout(() => {
       fetch("/api/auth/me")
@@ -99,8 +99,10 @@ export default function Onboarding() {
         .catch((error) => setErrorMessage(error.message));
     }, 0);
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [router]);
 
   function handleChange(e) {
     if (errorMessage) setErrorMessage("");
@@ -143,12 +145,6 @@ export default function Onboarding() {
     setLoading(true);
     setErrorMessage("");
     setAccountExists(false);
-
-    if (!editingUserId && form.password !== form.confirmPassword) {
-      setErrorMessage("Passwords do not match.");
-      setLoading(false);
-      return;
-    }
 
     try {
       const endpoint = editingUserId
@@ -304,45 +300,19 @@ export default function Onboarding() {
 
           <>
             <div className="mb-8 mt-10">
-                <h2 className="text-xl font-bold text-slate-900">
-                  🔒 Account Security
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  {editingUserId
-                    ? "Set a password if this older account does not have one yet."
-                    : "Create a password to securely access your dashboard."}
-                </p>
+              <h2 className="text-xl font-bold text-slate-900">🔒 Account Security</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {editingUserId ? "Set a password if this older account does not have one yet." : "Create a password to securely access your dashboard."}
+              </p>
             </div>
-
             <div className="grid gap-5 md:grid-cols-2">
               <div>
                 <label className="text-sm font-semibold text-slate-700">Password</label>
-                <input
-                  name="password"
-                  type="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  autoComplete="new-password"
-                  minLength="8"
-                  required={!editingUserId}
-                  placeholder={editingUserId ? "Optional" : "At least 8 characters"}
-                  className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                />
+                <input name="password" type="password" value={form.password} onChange={handleChange} autoComplete="new-password" minLength="8" required={!editingUserId} placeholder={editingUserId ? "Optional" : "At least 8 characters"} className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100" />
               </div>
-
               <div>
                 <label className="text-sm font-semibold text-slate-700">Confirm Password</label>
-                <input
-                  name="confirmPassword"
-                  type="password"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  autoComplete="new-password"
-                  minLength="8"
-                  required={!editingUserId && Boolean(form.password)}
-                  placeholder={editingUserId ? "Optional" : "Re-enter your password"}
-                  className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                />
+                <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} autoComplete="new-password" minLength="8" required={!editingUserId && Boolean(form.password)} placeholder={editingUserId ? "Optional" : "Re-enter your password"} className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100" />
               </div>
             </div>
           </>
