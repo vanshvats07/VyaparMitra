@@ -1,45 +1,43 @@
+"use client";
+
 function formatCurrency(value) {
-	return `₹${Math.round(value).toLocaleString("en-IN")}`;
+  return `₹${Math.round(value).toLocaleString("en-IN")}`;
 }
 
-export default function RiskAnalysis({ analysis }) {
-	const riskWidth = analysis.riskLevel === "High" ? "w-full" : analysis.riskLevel === "Moderate" ? "w-2/3" : "w-1/3";
-	const riskColor = analysis.riskLevel === "High" ? "bg-red-500" : analysis.riskLevel === "Moderate" ? "bg-orange-500" : "bg-green-500";
+export default function RiskAnalysis({ records = [] }) {
+  if (records.length < 2) {
+    return <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">Add at least 2-3 financial records to generate a more meaningful risk estimate.</p>;
+  }
 
-	return (
-		<>
-			<div className="mt-6 grid grid-cols-2 gap-4">
-				<div className="rounded-xl bg-slate-50 p-4">
-					<p className="text-xs text-slate-500">Current Cash Buffer</p>
-					<p className="mt-2 text-xl font-bold">{formatCurrency(analysis.cashBuffer)}</p>
-				</div>
-				<div className="rounded-xl bg-red-50 p-4">
-					<p className="text-xs text-red-600">Projected Max Loss</p>
-					<p className="mt-2 text-xl font-bold text-red-600">{formatCurrency(analysis.projectedLoss)}</p>
-				</div>
-			</div>
+  const totals = records.reduce((summary, record) => ({
+    sales: summary.sales + Number(record.sales || 0),
+    expenses: summary.expenses + Number(record.expenses || 0),
+    profit: summary.profit + Number(record.profit ?? Number(record.sales || 0) - Number(record.expenses || 0)),
+  }), { sales: 0, expenses: 0, profit: 0 });
+  const averageSales = totals.sales / records.length;
+  const averageExpenses = totals.expenses / records.length;
+  const averageProfit = totals.profit / records.length;
+  const expenseRatio = averageSales > 0 ? averageExpenses / averageSales : 1;
+  const profitMargin = averageSales > 0 ? averageProfit / averageSales : 0;
+  const riskPercentage = Math.min(100, Math.max(0, Math.round(expenseRatio * 70 + Math.max(0, 0.2 - profitMargin) * 100)));
+  const riskLevel = riskPercentage >= 65 ? "High" : riskPercentage >= 35 ? "Moderate" : "Low";
+  const riskColor = riskLevel === "High" ? "bg-red-500" : riskLevel === "Moderate" ? "bg-orange-500" : "bg-green-500";
+  const textColor = riskLevel === "High" ? "text-red-700" : riskLevel === "Moderate" ? "text-orange-700" : "text-green-700";
 
-			<div className="mt-6">
-				<div className="flex justify-between text-sm">
-					<span>Risk Level: {analysis.riskLevel}</span>
-					<span className={analysis.riskLevel === "High" ? "text-red-600" : "text-orange-600"}>
-						{Math.round(analysis.expenseRatio * 100)}% expense ratio
-					</span>
-				</div>
-				<div className="mt-2 h-2 rounded-full bg-slate-200">
-					<div className={`h-2 rounded-full ${riskWidth} ${riskColor}`} />
-				</div>
-			</div>
-
-			<div className="mt-6 grid grid-cols-3 gap-3 text-sm">
-				<div><p className="text-xs text-slate-500">3M Revenue</p><p className="mt-1 font-semibold">{formatCurrency(analysis.projectedRevenue)}</p></div>
-				<div><p className="text-xs text-slate-500">3M Expenses</p><p className="mt-1 font-semibold">{formatCurrency(analysis.projectedExpenses)}</p></div>
-				<div><p className="text-xs text-slate-500">3M Profit</p><p className={`mt-1 font-semibold ${analysis.projectedProfit >= 0 ? "text-green-700" : "text-red-600"}`}>{formatCurrency(analysis.projectedProfit)}</p></div>
-			</div>
-
-			{analysis.isDemo && (
-				<p className="mt-6 text-sm text-slate-600">Demo analysis — based on sample financial data</p>
-			)}
-		</>
-	);
+  return (
+    <>
+      <p className="mt-2 text-xs font-medium text-amber-700">Estimated from your financial records</p>
+      <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Average Sales</p><p className="mt-1 font-semibold">{formatCurrency(averageSales)}</p></div>
+        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Average Expenses</p><p className="mt-1 font-semibold">{formatCurrency(averageExpenses)}</p></div>
+        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Average Profit</p><p className={`mt-1 font-semibold ${averageProfit >= 0 ? "text-green-700" : "text-red-600"}`}>{formatCurrency(averageProfit)}</p></div>
+        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Expense Ratio</p><p className="mt-1 font-semibold">{Math.round(expenseRatio * 100)}%</p></div>
+      </div>
+      <div className="mt-5">
+        <div className="flex justify-between text-sm"><span className="font-semibold">Risk Level: <span className={textColor}>{riskLevel}</span></span><span className="font-semibold">{riskPercentage}%</span></div>
+        <div className="mt-2 h-2 rounded-full bg-slate-200"><div className={`h-2 rounded-full ${riskColor}`} style={{ width: `${riskPercentage}%` }} /></div>
+        <p className="mt-2 text-xs text-slate-500">Profit margin: {Math.round(profitMargin * 100)}%</p>
+      </div>
+    </>
+  );
 }

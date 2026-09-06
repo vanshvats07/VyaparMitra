@@ -3,28 +3,37 @@
 import BusinessChart from "./components/BusinessChart";
 import WhatIfSimulator from "./components/WhatIfSimulator";
 import RiskAnalysis from "./components/RiskAnalysis";
+import FinancialRecordModal from "./components/FinancialRecordModal";
+import FinancialRecords from "./components/FinancialRecords";
+import FinancialSummary from "./components/FinancialSummary";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  getDemoBusinessInsights,
-  getDemoRiskAnalysis,
-  getFinancialDataSource,
-} from "@/lib/demoFinancialData";
+  deleteFinancialRecord,
+  getFinancialRecords,
+  saveFinancialRecord,
+  updateFinancialRecord,
+} from "@/lib/financialStorage";
+import {
+  calculateBusinessReadiness,
+  getReadinessLabel,
+} from "@/lib/businessReadiness";
 
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [metrics, setMetrics] = useState(null);
-  const [businessMetrics, setBusinessMetrics] = useState([]);
+  const [financialRecords, setFinancialRecords] = useState([]);
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const [insights, setInsights] = useState(null);
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const financialDataSource = getFinancialDataSource(businessMetrics, user);
-  const financialData = financialDataSource.data;
-  const riskAnalysis = getDemoRiskAnalysis(financialData, user);
-  const latestFinancialData = financialData[financialData.length - 1];
+  const financialData = financialRecords;
+  const readiness = calculateBusinessReadiness(user, financialRecords);
+  const readinessLabel = getReadinessLabel(readiness.readinessScore);
 
   const readJsonResponse = async (response, endpoint) => {
     const contentType = response.headers.get("content-type") || "";
@@ -46,6 +55,14 @@ export default function Dashboard() {
 
   const loadUser = async () => {
     try {
+      setFinancialRecords(getFinancialRecords());
+      let storedUser = null;
+      try {
+        const storedUserValue = window.localStorage.getItem("vyaparMitraUser");
+        storedUser = storedUserValue ? JSON.parse(storedUserValue) : null;
+      } catch {
+        storedUser = null;
+      }
       const sessionResponse = await fetch("/api/auth/me");
       const sessionData = await readJsonResponse(sessionResponse, "/api/auth/me");
       if (!sessionResponse.ok || !sessionData.success || !sessionData.user?._id) {
@@ -72,7 +89,10 @@ export default function Dashboard() {
         throw new Error(metricsData.message || "Failed to load business metrics");
       }
 
-      setUser(userData.user);
+      setUser(storedUser || userData.user);
+      if (!storedUser) {
+        window.localStorage.setItem("vyaparMitraUser", JSON.stringify(userData.user));
+      }
       setMetrics(metricsData.metrics);
 
       const historyEndpoint = `/api/metrics/${userId}`;
@@ -81,8 +101,6 @@ export default function Dashboard() {
       if (!historyResponse.ok || !historyData.success) {
         throw new Error(historyData.message || "Failed to load business history");
       }
-
-      setBusinessMetrics(historyData.metrics || []);
 
       try {
         const insightsEndpoint = `/api/insights?userId=${userId}`;
@@ -100,7 +118,10 @@ export default function Dashboard() {
       } catch (insightsLoadError) {
         console.error("Failed to load business insights:", insightsLoadError);
         setInsights({
-          ...getDemoBusinessInsights(userData.user, historyData.metrics || []),
+          summary: "AI insights are temporarily unavailable. Use your saved financial records to review the dashboard estimates below.",
+          opportunities: ["Keep recording monthly sales and expenses to build a clearer business history."],
+          risks: ["Review expenses regularly and compare them with monthly sales."],
+          nextSteps: ["Add your next financial record when the month closes."],
           isFallback: true,
         });
       } finally {
@@ -130,11 +151,35 @@ export default function Dashboard() {
     loadUser();
   };
 
+  function handleSaveRecord(record) {
+    const savedRecord = editingRecord
+      ? updateFinancialRecord(editingRecord.id, record)
+      : saveFinancialRecord(record);
+    setFinancialRecords((currentRecords) => editingRecord
+      ? currentRecords.map((currentRecord) => currentRecord.id === savedRecord.id ? { ...currentRecord, ...savedRecord } : currentRecord)
+      : [...currentRecords, savedRecord]);
+    setEditingRecord(null);
+    setIsRecordModalOpen(false);
+  }
+
+  function handleEditRecord(record) {
+    setEditingRecord(record);
+    setIsRecordModalOpen(true);
+  }
+
+  function handleDeleteRecord(record) {
+    if (!window.confirm(`Delete the ${record.month} ${record.year} financial record?`)) return;
+    deleteFinancialRecord(record.id);
+    setFinancialRecords((currentRecords) => currentRecords.filter((currentRecord) => currentRecord.id !== record.id));
+  }
+
   async function handleLogout() {
+    if (!window.confirm("Are you sure you want to log out?")) return;
     await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("userId");
     localStorage.removeItem("vyaparMitraUserId");
-    router.replace("/login");
+    localStorage.removeItem("vyaparMitraUser");
+    router.replace("/onboarding");
   }
 
   if (loading) {
@@ -266,6 +311,14 @@ export default function Dashboard() {
               Business Growth
             </button>
 
+            <button
+              onClick={() => router.push("/dashboard/invoice-scanner")}
+              className="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-green-50 hover:text-green-700"
+            >
+              <span>🧾</span>
+              Invoice Scanner
+            </button>
+
             <div className="my-4 border-t" />
 
             <button
@@ -377,19 +430,15 @@ export default function Dashboard() {
             <div className="flex flex-col justify-between rounded-2xl border bg-white p-6 shadow-sm">
 
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl text-green-700">
-                {metrics?.profileCompletion === 100 ? "✓" : "!"}
+                {readiness.readinessScore >= 95 ? "✓" : "!"}
               </div>
 
               <h2 className="mt-4 text-center text-xl font-bold">
-                {metrics?.profileCompletion === 100
-                  ? "Profile Ready"
-                  : "Profile Incomplete"}
+                {readinessLabel}
               </h2>
 
               <p className="mt-2 text-center text-sm leading-6 text-slate-600">
-                {metrics
-                  ? `${metrics.profileCompletion}% of your business information is complete.`
-                  : "Business profile status is being checked."}
+                {`${readiness.profileCompletion}% of your business information is complete.`}
               </p>
 
               <button
@@ -412,22 +461,21 @@ export default function Dashboard() {
                 <h2 className="text-xl font-bold">
                   Business Performance
                 </h2>
-
-                  {financialDataSource.isDemo && (
-                    <p className="mt-1 text-xs text-amber-700">
-                      Demo data — Add financial records to see your actual performance
-                    </p>
-                  )}
-
-                <select className="rounded-lg border bg-white px-3 py-2 text-sm">
-                  <option>Last 6 Months</option>
-                  <option>This Year</option>
-                </select>
+                <button
+                  onClick={() => { setEditingRecord(null); setIsRecordModalOpen(true); }}
+                  className="rounded-lg bg-green-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-800"
+                >
+                  + Add Financial Record
+                </button>
 
               </div>
 
               <div className="mt-8">
                 <BusinessChart data={financialData} />
+              </div>
+
+              <div className="mt-6 border-t pt-6">
+                <FinancialSummary records={financialRecords} />
               </div>
 
             </div>
@@ -440,12 +488,17 @@ export default function Dashboard() {
 
               <div className="mt-8 flex justify-center">
 
-                <div className="flex h-32 w-32 items-center justify-center rounded-full border-[12px] border-green-200">
+                <div
+                  className="flex h-32 w-32 items-center justify-center rounded-full"
+                  style={{
+                    background: `conic-gradient(#15803d ${readiness.readinessScore * 3.6}deg, #dcfce7 0deg)`,
+                  }}
+                >
 
-                  <div className="text-center">
+                  <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white text-center">
 
                     <p className="text-3xl font-bold text-green-700">
-                      {metrics?.readinessScore ?? "--"}
+                      {readiness.readinessScore}
                     </p>
 
                     <p className="text-xs text-slate-500">
@@ -459,8 +512,20 @@ export default function Dashboard() {
               </div>
 
               <p className="mt-5 text-center font-semibold text-green-700">
-                {metrics?.readinessLabel || "Unavailable"}
+                {readinessLabel}
               </p>
+
+              <div className="mt-5 rounded-xl bg-green-50 p-4 text-xs text-slate-600">
+                <p className="font-semibold text-slate-800">Why this score?</p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <span>Profile: {readiness.factors.profile}/20</span>
+                  <span>Financial Health: {readiness.factors.financialHealth}/40</span>
+                  <span>Stability: {readiness.factors.stability}/20</span>
+                  <span>Budget: {readiness.factors.budget}/10</span>
+                  <span>Experience: {readiness.factors.experience}/10</span>
+                </div>
+                <p className="mt-3 font-semibold text-green-700">Total: {readiness.readinessScore}/100</p>
+              </div>
 
               <div className="mt-6 space-y-4 border-t pt-5 text-sm">
 
@@ -470,7 +535,7 @@ export default function Dashboard() {
                   </span>
 
                   <span className="font-semibold text-green-700">
-                    {metrics ? `${metrics.profileCompletion}%` : "--"}
+                    {readiness.profileCompletion}%
                   </span>
                 </div>
 
@@ -480,7 +545,9 @@ export default function Dashboard() {
                   </span>
 
                   <span className="font-semibold text-green-700">
-                    ₹{Number(user.budget).toLocaleString("en-IN")}
+                    {user.budget !== undefined && user.budget !== null && String(user.budget).trim() !== ""
+                      ? `₹${Number(user.budget).toLocaleString("en-IN")}`
+                      : "Not provided"}
                   </span>
                 </div>
 
@@ -491,6 +558,16 @@ export default function Dashboard() {
 
                   <span className="font-semibold">
                     {user.experience || "Not provided"}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-slate-500">
+                    Financial Records
+                  </span>
+
+                  <span className="font-semibold">
+                    {readiness.financialRecordCount}
                   </span>
                 </div>
 
@@ -517,8 +594,7 @@ export default function Dashboard() {
               </div>
 
               <WhatIfSimulator
-                baseline={latestFinancialData}
-                isDemo={financialDataSource.isDemo}
+                records={financialRecords}
               />
 
             </div>
@@ -537,11 +613,19 @@ export default function Dashboard() {
 
               </div>
 
-              <RiskAnalysis analysis={riskAnalysis} />
+              <RiskAnalysis records={financialRecords} />
 
             </div>
 
           </section>
+
+          <div className="mt-8">
+            <FinancialRecords
+              records={financialRecords}
+              onEdit={handleEditRecord}
+              onDelete={handleDeleteRecord}
+            />
+          </div>
 
           <section className="mt-8 rounded-2xl border bg-white p-6 shadow-sm">
 
@@ -727,6 +811,15 @@ export default function Dashboard() {
         </div>
 
       </footer>
+
+      {isRecordModalOpen && (
+        <FinancialRecordModal
+          key={editingRecord?.id || "new-record"}
+          record={editingRecord}
+          onClose={() => { setEditingRecord(null); setIsRecordModalOpen(false); }}
+          onSave={handleSaveRecord}
+        />
+      )}
 
     </main>
   );

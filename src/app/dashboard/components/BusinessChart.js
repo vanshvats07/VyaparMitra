@@ -15,10 +15,12 @@ export default function BusinessChart({ data = [] }) {
   if (data.length === 0) {
     return (
       <div className="flex h-80 w-full items-center justify-center rounded-xl bg-slate-50 px-6 text-center">
-        <p className="max-w-md text-sm leading-6 text-slate-500">
-          Historical sales, profit, and expense data will appear here after
-          financial records are added.
-        </p>
+        <div>
+          <p className="font-semibold text-slate-700">No financial records yet</p>
+          <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+            Add your first financial record to see your business performance.
+          </p>
+        </div>
       </div>
     );
   }

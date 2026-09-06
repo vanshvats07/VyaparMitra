@@ -181,6 +181,10 @@ export default function Onboarding() {
         return;
       }
 
+      if (data.user) {
+        localStorage.setItem("vyaparMitraUser", JSON.stringify(data.user));
+      }
+
       // Redirect to /dashboard
       router.push("/dashboard");
     } catch (err) {

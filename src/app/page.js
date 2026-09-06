@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
@@ -34,12 +35,12 @@ export default function Home() {
               Get Started
             </button>
 
-            <button
-              onClick={() => router.push("/onboarding")}
+            <Link
+              href="/onboarding"
               className="rounded-lg bg-green-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-800"
             >
               Shuru Karein
-            </button>
+            </Link>
           </div>
 
         </div>
