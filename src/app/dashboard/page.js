@@ -40,7 +40,7 @@ export default function Dashboard() {
 
     if (!contentType.toLowerCase().includes("application/json")) {
       throw new Error(
-        `Request to ${endpoint} failed with status ${response.status}. The server returned a non-JSON response.`
+        `Request to ${endpoint} failed with status ${response.status}. The server returned a non-JSON response. Please check the server logs.`
       );
     }
 
