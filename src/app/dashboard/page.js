@@ -1,9 +1,15 @@
 "use client";
 
 import BusinessChart from "./components/BusinessChart";
+import WhatIfSimulator from "./components/WhatIfSimulator";
+import RiskAnalysis from "./components/RiskAnalysis";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getStoredUserId } from "@/lib/clientUser";
+import {
+  getDemoBusinessInsights,
+  getDemoRiskAnalysis,
+  getFinancialDataSource,
+} from "@/lib/demoFinancialData";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -12,18 +18,51 @@ export default function Dashboard() {
   const [businessMetrics, setBusinessMetrics] = useState([]);
   const [insights, setInsights] = useState(null);
   const [insightsLoading, setInsightsLoading] = useState(true);
-  const [insightsError, setInsightsError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const loadUser = async (id) => {
+  const financialDataSource = getFinancialDataSource(businessMetrics, user);
+  const financialData = financialDataSource.data;
+  const riskAnalysis = getDemoRiskAnalysis(financialData, user);
+  const latestFinancialData = financialData[financialData.length - 1];
+
+  const readJsonResponse = async (response, endpoint) => {
+    const contentType = response.headers.get("content-type") || "";
+
+    if (!contentType.toLowerCase().includes("application/json")) {
+      throw new Error(
+        `Request to ${endpoint} failed with status ${response.status}. The server returned a non-JSON response.`
+      );
+    }
+
     try {
+      return await response.json();
+    } catch {
+      throw new Error(
+        `Request to ${endpoint} failed with status ${response.status}. The server returned invalid JSON.`
+      );
+    }
+  };
+
+  const loadUser = async () => {
+    try {
+      const sessionResponse = await fetch("/api/auth/me");
+      const sessionData = await readJsonResponse(sessionResponse, "/api/auth/me");
+      if (!sessionResponse.ok || !sessionData.success || !sessionData.user?._id) {
+        throw new Error("Your session has expired. Please log in again.");
+      }
+      const userId = sessionData.user._id;
+
+      const userEndpoint = `/api/users/${userId}`;
       const [userResponse, metricsResponse] = await Promise.all([
-        fetch(`/api/users/${id}`),
-        fetch(`/api/users/${id}/metrics`),
+        fetch(userEndpoint),
+        fetch(`/api/users/${userId}/metrics`),
       ]);
-      const userData = await userResponse.json();
-      const metricsData = await metricsResponse.json();
+      const userData = await readJsonResponse(userResponse, userEndpoint);
+      const metricsData = await readJsonResponse(
+        metricsResponse,
+        `/api/users/${userId}/metrics`
+      );
 
       if (!userResponse.ok || !userData.success || !userData.user) {
         throw new Error(userData.message || "Failed to load user profile");
@@ -36,8 +75,9 @@ export default function Dashboard() {
       setUser(userData.user);
       setMetrics(metricsData.metrics);
 
-      const historyResponse = await fetch(`/api/metrics/${id}`);
-      const historyData = await historyResponse.json();
+      const historyEndpoint = `/api/metrics/${userId}`;
+      const historyResponse = await fetch(historyEndpoint);
+      const historyData = await readJsonResponse(historyResponse, historyEndpoint);
       if (!historyResponse.ok || !historyData.success) {
         throw new Error(historyData.message || "Failed to load business history");
       }
@@ -45,19 +85,24 @@ export default function Dashboard() {
       setBusinessMetrics(historyData.metrics || []);
 
       try {
-        const insightsResponse = await fetch(`/api/insights?userId=${id}`);
-        const insightsData = await insightsResponse.json();
+        const insightsEndpoint = `/api/insights?userId=${userId}`;
+        const insightsResponse = await fetch(insightsEndpoint);
+        const insightsData = await readJsonResponse(
+          insightsResponse,
+          insightsEndpoint
+        );
 
         if (!insightsResponse.ok || !insightsData.success) {
           throw new Error(insightsData.message || "Unable to load business insights");
         }
 
         setInsights(insightsData.insights || null);
-        setInsightsError("");
       } catch (insightsLoadError) {
         console.error("Failed to load business insights:", insightsLoadError);
-        setInsights(null);
-        setInsightsError("Business insights are currently unavailable.");
+        setInsights({
+          ...getDemoBusinessInsights(userData.user, historyData.metrics || []),
+          isFallback: true,
+        });
       } finally {
         setInsightsLoading(false);
       }
@@ -73,17 +118,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const userId = getStoredUserId();
-
-    if (!userId) {
-      const timer = setTimeout(() => {
-        setError("No user profile found. Please complete the onboarding process first.");
-        setLoading(false);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-
-    const timer = setTimeout(() => loadUser(userId), 0);
+    const timer = setTimeout(() => loadUser(), 0);
     return () => clearTimeout(timer);
   }, []);
 
@@ -91,20 +126,16 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     setInsights(null);
-    setInsightsError("");
     setInsightsLoading(true);
-    const userId = getStoredUserId();
-
-    if (!userId) {
-      setError(
-        "No user profile found. Please complete the onboarding process first."
-      );
-      setLoading(false);
-      return;
-    }
-
-    loadUser(userId);
+    loadUser();
   };
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    localStorage.removeItem("userId");
+    localStorage.removeItem("vyaparMitraUserId");
+    router.replace("/login");
+  }
 
   if (loading) {
     return (
@@ -178,6 +209,13 @@ export default function Dashboard() {
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-slate-50"
             >
               Edit Profile
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+            >
+              Logout
             </button>
 
           </div>
@@ -375,6 +413,12 @@ export default function Dashboard() {
                   Business Performance
                 </h2>
 
+                  {financialDataSource.isDemo && (
+                    <p className="mt-1 text-xs text-amber-700">
+                      Demo data — Add financial records to see your actual performance
+                    </p>
+                  )}
+
                 <select className="rounded-lg border bg-white px-3 py-2 text-sm">
                   <option>Last 6 Months</option>
                   <option>This Year</option>
@@ -383,7 +427,7 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-8">
-                <BusinessChart data={businessMetrics} />
+                <BusinessChart data={financialData} />
               </div>
 
             </div>
@@ -472,27 +516,10 @@ export default function Dashboard() {
 
               </div>
 
-              <p className="mt-2 text-sm text-slate-600">
-                Revenue and expense information is needed before financial
-                scenarios can be calculated.
-              </p>
-
-              <div className="mt-6 border-t pt-5">
-
-                <p className="text-sm text-slate-500">
-                  Simulator Status
-                </p>
-
-                <p className="mt-1 text-xl font-bold">
-                  More business data needed
-                </p>
-
-                <p className="mt-2 text-xs text-slate-500">
-                  No financial estimate is shown without actual revenue and
-                  expense records.
-                </p>
-
-              </div>
+              <WhatIfSimulator
+                baseline={latestFinancialData}
+                isDemo={financialDataSource.isDemo}
+              />
 
             </div>
 
@@ -510,71 +537,7 @@ export default function Dashboard() {
 
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-4">
-
-                <div className="rounded-xl bg-slate-50 p-4">
-
-                  <p className="text-xs text-slate-500">
-                    Current Cash Buffer
-                  </p>
-
-                  <p className="mt-2 text-xl font-bold">
-                    Unavailable
-                  </p>
-
-                </div>
-
-                <div className="rounded-xl bg-red-50 p-4">
-
-                  <p className="text-xs text-red-600">
-                    Projected Max Loss
-                  </p>
-
-                  <p className="mt-2 text-xl font-bold text-red-600">
-                    Unavailable
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div className="mt-6">
-
-                <div className="flex justify-between text-sm">
-
-                  <span>
-                    Risk Level: Unavailable
-                  </span>
-
-                  <span className="text-red-600">
-                    --
-                  </span>
-
-                </div>
-
-                <div className="mt-2 h-2 rounded-full bg-slate-200">
-
-                  <div className="h-2 w-0 rounded-full bg-red-500" />
-
-                </div>
-
-              </div>
-
-              <div className="mt-6 space-y-3 text-sm text-slate-600">
-
-                <p>
-                  Cash flow data is not available for this profile.
-                </p>
-
-                <p>
-                  Add revenue and expense records to calculate risk.
-                </p>
-
-              </div>
-
-              <button className="mt-6 w-full rounded-lg border border-red-500 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50">
-                Detailed Forecast Needs More Data
-              </button>
+              <RiskAnalysis analysis={riskAnalysis} />
 
             </div>
 
@@ -602,16 +565,17 @@ export default function Dashboard() {
               <p className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
                 Loading business insights...
               </p>
-            ) : insightsError ? (
-              <p className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                {insightsError}
-              </p>
             ) : !insights ? (
               <p className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
                 No business insights are available yet.
               </p>
             ) : (
               <div className="mt-6 space-y-5">
+                {insights.isFallback && (
+                  <p className="text-xs font-medium text-amber-700">
+                    AI unavailable — Showing rule-based business insight
+                  </p>
+                )}
                 <p className="rounded-xl bg-green-50 p-4 text-sm leading-6 text-slate-700">
                   {insights.summary}
                 </p>

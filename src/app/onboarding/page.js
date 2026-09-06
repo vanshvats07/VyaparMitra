@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getStoredUserId } from "@/lib/clientUser";
+import { readJsonResponse } from "@/lib/clientHttp";
 import states from "india-location-data/src/data/states.json";
 import districts from "india-location-data/src/data/districts.json";
 import blocks from "india-location-data/src/data/blocks.json";
@@ -29,6 +29,8 @@ export default function Onboarding() {
     budget: "",
     experience: "",
     language: "en",
+    password: "",
+    confirmPassword: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -36,6 +38,7 @@ export default function Onboarding() {
   const [editingUserId, setEditingUserId] = useState(null);
   const [customVillage, setCustomVillage] = useState("");
   const [isCustomVillage, setIsCustomVillage] = useState(false);
+  const [accountExists, setAccountExists] = useState(false);
 
   const selectedState = sortedStates.find((state) => state.name === form.state);
   const availableDistricts = selectedState
@@ -57,21 +60,27 @@ export default function Onboarding() {
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.get("edit") !== "1") return;
+    const isEditMode = searchParams.get("edit") === "1";
 
-    const userId = getStoredUserId();
+    fetch("/api/auth/me")
+      .then((response) => {
+        if (response.ok && !isEditMode) {
+          router.replace("/dashboard");
+        }
+      })
+      .catch(() => {});
 
-    if (!userId) return;
+    if (!isEditMode) return;
 
     const timer = setTimeout(() => {
-      setEditingUserId(userId);
-      fetch(`/api/users/${userId}`)
-        .then((response) => response.json())
+      fetch("/api/auth/me")
+        .then((response) => readJsonResponse(response))
         .then((data) => {
           if (!data.success || !data.user) {
             throw new Error(data.message || "Failed to load your profile.");
           }
 
+          setEditingUserId(data.user._id);
           setForm({
             name: data.user.name || "",
             phone: data.user.phone || "",
@@ -83,6 +92,8 @@ export default function Onboarding() {
             budget: String(data.user.budget ?? ""),
             experience: data.user.experience || "",
             language: data.user.language || "en",
+            password: "",
+            confirmPassword: "",
           });
         })
         .catch((error) => setErrorMessage(error.message));
@@ -131,20 +142,33 @@ export default function Onboarding() {
     e.preventDefault();
     setLoading(true);
     setErrorMessage("");
+    setAccountExists(false);
+
+    if (!editingUserId && form.password !== form.confirmPassword) {
+      setErrorMessage("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const endpoint = editingUserId
         ? `/api/users/${editingUserId}`
         : "/api/users";
+      const payload = { ...form };
+      if (editingUserId && !payload.password) {
+        delete payload.password;
+        delete payload.confirmPassword;
+      }
+
       const response = await fetch(endpoint, {
         method: editingUserId ? "PATCH" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const data = await readJsonResponse(response);
 
       if (!response.ok) {
         let msg = data.message || "Failed to save user profile.";
@@ -152,14 +176,10 @@ export default function Onboarding() {
           msg = Object.values(data.errors).join(", ");
         }
         setErrorMessage(msg);
+        if (response.status === 409) setAccountExists(true);
         setLoading(false);
         return;
       }
-
-      const savedUserId = editingUserId || data._id;
-      localStorage.setItem("vyaparMitraUserId", savedUserId);
-      localStorage.setItem("userId", savedUserId);
-      localStorage.removeItem("vyaparMitraUser");
 
       // Redirect to /dashboard
       router.push("/dashboard");
@@ -222,6 +242,15 @@ export default function Onboarding() {
           {errorMessage && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
               ⚠️ {errorMessage}
+              {accountExists && (
+                <button
+                  type="button"
+                  onClick={() => router.push("/login")}
+                  className="mt-3 block rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100"
+                >
+                  Go to Login
+                </button>
+              )}
             </div>
           )}
 
@@ -268,6 +297,51 @@ export default function Onboarding() {
             </div>
 
           </div>
+
+          <>
+            <div className="mb-8 mt-10">
+                <h2 className="text-xl font-bold text-slate-900">
+                  🔒 Account Security
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {editingUserId
+                    ? "Set a password if this older account does not have one yet."
+                    : "Create a password to securely access your dashboard."}
+                </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-semibold text-slate-700">Password</label>
+                <input
+                  name="password"
+                  type="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  autoComplete="new-password"
+                  minLength="8"
+                  required={!editingUserId}
+                  placeholder={editingUserId ? "Optional" : "At least 8 characters"}
+                  className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700">Confirm Password</label>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  autoComplete="new-password"
+                  minLength="8"
+                  required={!editingUserId && Boolean(form.password)}
+                  placeholder={editingUserId ? "Optional" : "Re-enter your password"}
+                  className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                />
+              </div>
+            </div>
+          </>
 
           <div className="mb-8 mt-10">
             <h2 className="text-xl font-bold text-slate-900">
@@ -617,6 +691,19 @@ export default function Onboarding() {
                   ? "Save Profile Changes →"
                   : "Create My Business Dashboard →"}
             </button>
+
+            {!editingUserId && (
+              <p className="mt-5 text-center text-sm text-slate-600">
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => router.push("/login")}
+                  className="font-semibold text-green-700 hover:underline"
+                >
+                  Login
+                </button>
+              </p>
+            )}
 
           </div>
 

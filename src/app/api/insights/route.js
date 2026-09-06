@@ -11,6 +11,10 @@ import {
   insightsRequestSchema,
   insightsResponseSchema,
 } from "@/lib/validations/insights";
+import {
+  getDemoBusinessInsights,
+  getDemoFinancialData,
+} from "@/lib/demoFinancialData";
 
 function buildInsightsPrompt({ user, schemes, history, calculatedMetrics }) {
   return `You are a practical business advisor for small businesses in India.
@@ -125,11 +129,12 @@ export async function GET(request) {
     const history =
       historyResult.status === "fulfilled"
         ? historyResult.value
-        : { unavailable: true };
+        : [];
+    const insightHistory = history.length > 0 ? history : getDemoFinancialData(user);
     const prompt = buildInsightsPrompt({
       user,
       schemes,
-      history,
+      history: insightHistory,
       calculatedMetrics: calculateBusinessMetrics(user),
     });
 
@@ -137,25 +142,37 @@ export async function GET(request) {
       responseMimeType: "application/json",
     });
     if (result.error === "not_configured") {
-      return NextResponse.json(
-        { success: false, message: "AI insights are not configured yet" },
-        { status: 503 }
-      );
+      console.warn("AI insights are not configured; using rule-based fallback.");
+      return NextResponse.json({
+        success: true,
+        insights: {
+          ...getDemoBusinessInsights(user, insightHistory),
+          isFallback: true,
+        },
+      });
     }
     if (result.error) {
-      return NextResponse.json(
-        { success: false, message: "The AI provider could not generate insights" },
-        { status: 502 }
-      );
+      console.error("AI provider failed; using rule-based fallback:", result.error);
+      return NextResponse.json({
+        success: true,
+        insights: {
+          ...getDemoBusinessInsights(user, insightHistory),
+          isFallback: true,
+        },
+      });
     }
 
     const responseData = parseGeminiJson(result.text);
     const validatedResponse = insightsResponseSchema.safeParse(responseData);
     if (!validatedResponse.success) {
-      return NextResponse.json(
-        { success: false, message: "The AI provider returned invalid insights" },
-        { status: 502 }
-      );
+      console.error("AI provider returned invalid insights; using rule-based fallback.");
+      return NextResponse.json({
+        success: true,
+        insights: {
+          ...getDemoBusinessInsights(user, insightHistory),
+          isFallback: true,
+        },
+      });
     }
 
     return NextResponse.json({

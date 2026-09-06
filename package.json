@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "india-location-data": "^1.0.0",
     "mongoose": "^9.9.4",
     "next": "16.3.3",

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getStoredUserId } from "@/lib/clientUser";
 import { getBusinessIdeas } from "@/lib/businessRecommendations";
 
 export default function BusinessIdea() {
@@ -11,14 +10,8 @@ export default function BusinessIdea() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const userId = getStoredUserId(true);
-    if (!userId) {
-      router.push("/onboarding");
-      return;
-    }
-
     const timer = setTimeout(() => {
-      fetch(`/api/users/${userId}`)
+      fetch("/api/auth/me")
         .then((response) => response.json())
         .then((data) => {
           if (!data.success || !data.user) throw new Error(data.message);

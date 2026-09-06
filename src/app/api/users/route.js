@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import { getAuthenticatedUserId, setSessionCookie } from "@/lib/auth";
+import {
+  getAuthenticatedUserId,
+  hashPassword,
+  sanitizeUser,
+  setSessionCookie,
+} from "@/lib/auth";
 import User from "@/models/User";
 import { createUserSchema, formatZodErrors } from "@/lib/validations/user";
 
 export async function POST(request) {
   try {
+    if (await getAuthenticatedUserId()) {
+      return NextResponse.json(
+        { success: false, message: "You are already logged in." },
+        { status: 409 }
+      );
+    }
+
     let body;
     try {
       body = await request.json();
@@ -34,6 +46,13 @@ export async function POST(request) {
 
     const validatedData = validationResult.data;
 
+    if (!validatedData.password) {
+      return NextResponse.json(
+        { success: false, message: "Password is required when creating an account." },
+        { status: 400 }
+      );
+    }
+
     if (!process.env.SESSION_SECRET) {
       return NextResponse.json(
         { success: false, message: "Authentication is not configured" },
@@ -49,21 +68,28 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          message: "A user with this phone number already exists.",
+          message: "Phone number already registered. Please login.",
           field: "phone",
         },
         { status: 409 }
       );
     }
 
-    const user = await User.create(validatedData);
+    const profileData = { ...validatedData };
+    const password = profileData.password;
+    delete profileData.password;
+    delete profileData.confirmPassword;
+    const user = await User.create({
+      ...profileData,
+      passwordHash: await hashPassword(password),
+    });
 
     const response = NextResponse.json(
       {
         success: true,
         message: "User created successfully",
         _id: user._id,
-        user,
+        user: sanitizeUser(user),
       },
       { status: 201 }
     );
@@ -76,7 +102,7 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          message: "A user with this phone number already exists.",
+          message: "Phone number already registered. Please login.",
           field: "phone",
         },
         { status: 409 }

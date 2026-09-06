@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
-import { getAuthenticatedUserId } from "@/lib/auth";
+import {
+  getAuthenticatedUserId,
+  hashPassword,
+  sanitizeUser,
+} from "@/lib/auth";
 import { createUserSchema, formatZodErrors } from "@/lib/validations/user";
 
 /**
@@ -11,11 +15,10 @@ import { createUserSchema, formatZodErrors } from "@/lib/validations/user";
  */
 export async function GET(request, { params }) {
   try {
-    // In Next.js 15+, params is a Promise that must be awaited
-    const { id } = await params;
+    const routeParams = await params;
+    const id = typeof routeParams?.id === "string" ? routeParams.id.trim() : "";
 
-    // 1. Validate that the ID parameter is provided and is a valid MongoDB ObjectId
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         {
           success: false,
@@ -33,13 +36,10 @@ export async function GET(request, { params }) {
       );
     }
 
-    // 2. Connect to database
     await connectDB();
 
-    // 3. Find user by ID (excluding internal __v)
     const user = await User.findById(id).select("-__v");
 
-    // 4. Return 404 if user does not exist
     if (!user) {
       return NextResponse.json(
         {
@@ -50,10 +50,9 @@ export async function GET(request, { params }) {
       );
     }
 
-    // 5. Return the found user
     return NextResponse.json({
       success: true,
-      user,
+      user: sanitizeUser(user),
     });
   } catch (error) {
     console.error("Fetch user by ID error:", error);
@@ -125,7 +124,14 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    const user = await User.findByIdAndUpdate(id, validationResult.data, {
+    const updateData = { ...validationResult.data };
+    if (updateData.password) {
+      updateData.passwordHash = await hashPassword(updateData.password);
+    }
+    delete updateData.password;
+    delete updateData.confirmPassword;
+
+    const user = await User.findByIdAndUpdate(id, updateData, {
       returnDocument: "after",
       runValidators: true,
     }).select("-__v");
@@ -140,7 +146,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({
       success: true,
       message: "User profile updated successfully",
-      user,
+      user: sanitizeUser(user),
     });
   } catch (error) {
     console.error("User update error:", error);
