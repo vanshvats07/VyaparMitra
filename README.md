@@ -60,10 +60,10 @@ Create a local `.env.local` file or configure these values in the deployment pla
 MONGODB_URI=your_mongodb_connection_string
 SESSION_SECRET=your_long_random_session_secret
 GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.6-flash
 ```
 
-`MONGODB_URL` is also supported for compatibility, but `MONGODB_URI` is recommended. `GEMINI_MODEL` is optional and defaults to `gemini-2.5-flash`.
+`MONGODB_URL` is also supported for compatibility, but `MONGODB_URI` is recommended. `GEMINI_MODEL` is optional and defaults to `gemini-3.6-flash`.
 
 All listed variables are server-only. Do not rename them with `NEXT_PUBLIC_`, commit environment files, or place real values in source code.
 

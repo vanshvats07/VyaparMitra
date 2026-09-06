@@ -57,7 +57,9 @@ export default function Dashboard() {
       } catch (insightsLoadError) {
         console.error("Failed to load business insights:", insightsLoadError);
         setInsights(null);
-        setInsightsError("Business insights are currently unavailable.");
+        setInsightsError(
+          insightsLoadError.message || "Business insights are currently unavailable."
+        );
       } finally {
         setInsightsLoading(false);
       }

@@ -13,14 +13,14 @@ export function parseGeminiJson(text) {
 
 export async function generateGeminiText(
   prompt,
-  { timeoutMs = 15000, responseMimeType } = {}
+  { timeoutMs = 30000, responseMimeType } = {}
 ) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return { error: "not_configured" };
   }
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const model = process.env.GEMINI_MODEL || "gemini-3.6-flash";
   const requestBody = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
   };
@@ -39,12 +39,14 @@ export async function generateGeminiText(
         signal: AbortSignal.timeout(timeoutMs),
       }
     );
-  } catch {
-    return { error: "provider" };
+  } catch (error) {
+    return {
+      error: error?.name === "TimeoutError" ? "timeout" : "provider",
+    };
   }
 
   if (!response.ok) {
-    return { error: "provider" };
+    return { error: "provider", status: response.status };
   }
 
   let data;

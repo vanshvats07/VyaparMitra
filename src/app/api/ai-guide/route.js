@@ -101,6 +101,24 @@ ${question}`;
         { status: 503 }
       );
     }
+    if (result.error === "timeout") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "The AI response took too long to generate. Please try again.",
+        },
+        { status: 504 }
+      );
+    }
+    if (result.error === "provider" && result.status === 429) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "The AI provider quota has been reached. Please try again later.",
+        },
+        { status: 503, headers: { "Retry-After": "60" } }
+      );
+    }
     if (result.error) {
       return NextResponse.json(
         { success: false, message: "The AI provider could not answer right now." },
