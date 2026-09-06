@@ -18,6 +18,7 @@ import {
   calculateBusinessReadiness,
   getReadinessLabel,
 } from "@/lib/businessReadiness";
+import { useLanguage } from "@/lib/useLanguage";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -30,10 +31,11 @@ export default function Dashboard() {
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { t } = useLanguage(user?.language);
 
   const financialData = financialRecords;
   const readiness = calculateBusinessReadiness(user, financialRecords);
-  const readinessLabel = getReadinessLabel(readiness.readinessScore);
+  const readinessLabel = getReadinessLabel(readiness.readinessScore, user?.language);
 
   const readJsonResponse = async (response, endpoint) => {
     const contentType = response.headers.get("content-type") || "";
@@ -56,13 +58,6 @@ export default function Dashboard() {
   const loadUser = async () => {
     try {
       setFinancialRecords(getFinancialRecords());
-      let storedUser = null;
-      try {
-        const storedUserValue = window.localStorage.getItem("vyaparMitraUser");
-        storedUser = storedUserValue ? JSON.parse(storedUserValue) : null;
-      } catch {
-        storedUser = null;
-      }
       const sessionResponse = await fetch("/api/auth/me");
       const sessionData = await readJsonResponse(sessionResponse, "/api/auth/me");
       if (!sessionResponse.ok || !sessionData.success || !sessionData.user?._id) {
@@ -89,10 +84,8 @@ export default function Dashboard() {
         throw new Error(metricsData.message || "Failed to load business metrics");
       }
 
-      setUser(storedUser || userData.user);
-      if (!storedUser) {
-        window.localStorage.setItem("vyaparMitraUser", JSON.stringify(userData.user));
-      }
+      setUser(userData.user);
+      window.localStorage.setItem("vyaparMitraUser", JSON.stringify(userData.user));
       setMetrics(metricsData.metrics);
 
       const historyEndpoint = `/api/metrics/${userId}`;
@@ -118,10 +111,10 @@ export default function Dashboard() {
       } catch (insightsLoadError) {
         console.error("Failed to load business insights:", insightsLoadError);
         setInsights({
-          summary: "AI insights are temporarily unavailable. Use your saved financial records to review the dashboard estimates below.",
-          opportunities: ["Keep recording monthly sales and expenses to build a clearer business history."],
-          risks: ["Review expenses regularly and compare them with monthly sales."],
-          nextSteps: ["Add your next financial record when the month closes."],
+          summary: t("dashboard.insightFallback"),
+          opportunities: [t("financial.insightOpportunityFallback")],
+          risks: [t("financial.insightRiskFallback")],
+          nextSteps: [t("financial.insightNextStepFallback")],
           isFallback: true,
         });
       } finally {
@@ -168,13 +161,13 @@ export default function Dashboard() {
   }
 
   function handleDeleteRecord(record) {
-    if (!window.confirm(`Delete the ${record.month} ${record.year} financial record?`)) return;
+    if (!window.confirm(`${t("financial.delete")} ${record.month} ${record.year} ${t("financial.record")}?`)) return;
     deleteFinancialRecord(record.id);
     setFinancialRecords((currentRecords) => currentRecords.filter((currentRecord) => currentRecord.id !== record.id));
   }
 
   async function handleLogout() {
-    if (!window.confirm("Are you sure you want to log out?")) return;
+    if (!window.confirm(`${t("common.logout")}?`)) return;
     await fetch("/api/auth/logout", { method: "POST" });
     localStorage.removeItem("userId");
     localStorage.removeItem("vyaparMitraUserId");
@@ -188,7 +181,7 @@ export default function Dashboard() {
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-200 border-t-green-700" />
           <p className="text-sm font-medium text-slate-600">
-            Loading your business dashboard...
+            {t("dashboard.loading")}
           </p>
         </div>
       </main>
@@ -203,23 +196,23 @@ export default function Dashboard() {
             ⚠️
           </div>
           <h2 className="mt-4 text-xl font-bold text-slate-900">
-            Unable to Load Profile
+            {t("dashboard.unable")}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            {error || "We couldn't find your business profile."}
+            {error || t("dashboard.profileMissing")}
           </p>
           <div className="mt-6 flex flex-col gap-3">
             <button
               onClick={handleRetry}
               className="w-full rounded-xl bg-green-700 py-3 text-sm font-semibold text-white transition hover:bg-green-800"
             >
-              Retry
+              {t("common.retry")}
             </button>
             <button
               onClick={() => router.push("/onboarding")}
               className="w-full rounded-xl border border-slate-300 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
-              Go to Onboarding
+              {t("common.onboarding")}
             </button>
           </div>
         </div>
@@ -239,7 +232,7 @@ export default function Dashboard() {
             </p>
 
             <p className="text-xs text-slate-500">
-              व्यवसाय मार्गदर्शन एवं सहायता
+              {t("dashboard.businessSupport")}
             </p>
           </div>
 
@@ -253,14 +246,14 @@ export default function Dashboard() {
               onClick={() => router.push("/onboarding?edit=1")}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-slate-50"
             >
-              Edit Profile
+              {t("common.editProfile")}
             </button>
 
             <button
               onClick={handleLogout}
               className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
             >
-              Logout
+              {t("common.logout")}
             </button>
 
           </div>
@@ -276,7 +269,7 @@ export default function Dashboard() {
 
             <div className="mb-4 px-3 py-2">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Main Menu
+                {t("dashboard.mainMenu")}
               </p>
             </div>
 
@@ -284,7 +277,7 @@ export default function Dashboard() {
               className="flex w-full items-center gap-3 rounded-xl bg-green-700 px-4 py-3 text-left text-sm font-semibold text-white shadow-sm"
             >
               <span>🏠</span>
-              Dashboard
+              {t("common.dashboard")}
             </button>
 
             <button
@@ -292,7 +285,7 @@ export default function Dashboard() {
               className="mt-2 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-green-50 hover:text-green-700"
             >
               <span>🤖</span>
-              AI Business Guide
+              {t("dashboard.aiGuide")}
             </button>
 
             <button
@@ -300,7 +293,7 @@ export default function Dashboard() {
               className="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
             >
               <span>🏦</span>
-              Government Schemes
+              {t("dashboard.schemes")}
             </button>
 
             <button
@@ -308,7 +301,7 @@ export default function Dashboard() {
               className="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-700"
             >
               <span>📈</span>
-              Business Growth
+              {t("dashboard.growth")}
             </button>
 
             <button
@@ -316,7 +309,7 @@ export default function Dashboard() {
               className="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-green-50 hover:text-green-700"
             >
               <span>🧾</span>
-              Invoice Scanner
+              {t("dashboard.invoice")}
             </button>
 
             <button
@@ -324,7 +317,7 @@ export default function Dashboard() {
               className="mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-green-50 hover:text-green-700"
             >
               <span>📍</span>
-              Local Market Analyzer
+              {t("dashboard.localAnalyzer")}
             </button>
 
             <div className="my-4 border-t" />
@@ -334,7 +327,7 @@ export default function Dashboard() {
               className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
             >
               <span>⚙️</span>
-              Edit Profile
+              {t("common.editProfile")}
             </button>
 
             <div className="mt-auto rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 p-4">
@@ -343,7 +336,7 @@ export default function Dashboard() {
               </p>
 
               <p className="mt-1 text-xs leading-5 text-slate-500">
-                आपका digital business साथी
+                {t("common.footer")}
               </p>
             </div>
 
@@ -356,16 +349,15 @@ export default function Dashboard() {
           <section className="mb-8">
 
             <p className="text-sm font-semibold text-green-700">
-              आपका व्यवसाय डैशबोर्ड
+              {t("dashboard.title")}
             </p>
 
             <h1 className="mt-2 text-4xl font-bold tracking-tight">
-              नमस्ते, {user.name} जी 👋
+              {t("dashboard.greeting", { name: user.name })} 👋
             </h1>
 
             <p className="mt-3 max-w-2xl text-slate-600">
-              आपके business को शुरू करने और आगे बढ़ाने के लिए
-              जरूरी जानकारी और tools यहाँ उपलब्ध हैं।
+              {t("dashboard.subtitle")}
             </p>
 
           </section>
@@ -379,7 +371,7 @@ export default function Dashboard() {
                 <div>
 
                   <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
-                    {user.businessCategory || "Business"}
+                    {user.businessCategory || t("common.business")}
                   </span>
 
                   <h2 className="mt-5 text-2xl font-bold">
@@ -403,7 +395,7 @@ export default function Dashboard() {
                 <div>
 
                   <p className="text-sm text-slate-500">
-                    Available Budget
+                    {t("common.availableBudget")}
                   </p>
 
                   <p className="mt-1 text-3xl font-bold text-green-700">
@@ -415,11 +407,11 @@ export default function Dashboard() {
                 <div>
 
                   <p className="text-sm text-slate-500">
-                    Experience Level
+                    {t("common.experience")}
                   </p>
 
                   <p className="mt-1 text-xl font-bold text-slate-800">
-                    {user.experience || "Not provided"}
+                    {user.experience || t("dashboard.notProvided")}
                   </p>
 
                 </div>
@@ -428,7 +420,7 @@ export default function Dashboard() {
                   onClick={() => router.push("/onboarding?edit=1")}
                   className="rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-50"
                 >
-                  View Details
+                  {t("dashboard.viewDetails")}
                 </button>
 
               </div>
@@ -446,14 +438,14 @@ export default function Dashboard() {
               </h2>
 
               <p className="mt-2 text-center text-sm leading-6 text-slate-600">
-                {`${readiness.profileCompletion}% of your business information is complete.`}
+                {t("dashboard.profileComplete", { percent: readiness.profileCompletion })}
               </p>
 
               <button
                 onClick={() => router.push("/onboarding?edit=1")}
                 className="mt-6 w-full rounded-lg bg-slate-100 py-2.5 text-sm font-semibold transition hover:bg-slate-200"
               >
-                Update Profile
+                {t("dashboard.updateProfile")}
               </button>
 
             </div>
@@ -467,23 +459,23 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
 
                 <h2 className="text-xl font-bold">
-                  Business Performance
+                  {t("dashboard.performance")}
                 </h2>
                 <button
                   onClick={() => { setEditingRecord(null); setIsRecordModalOpen(true); }}
                   className="rounded-lg bg-green-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-800"
                 >
-                  + Add Financial Record
+                  {t("dashboard.addFinancialRecord")}
                 </button>
 
               </div>
 
               <div className="mt-8">
-                <BusinessChart data={financialData} />
+                <BusinessChart data={financialData} language={user.language} />
               </div>
 
               <div className="mt-6 border-t pt-6">
-                <FinancialSummary records={financialRecords} />
+                <FinancialSummary records={financialRecords} language={user.language} />
               </div>
 
             </div>
@@ -491,7 +483,7 @@ export default function Dashboard() {
             <div className="rounded-2xl border bg-white p-6 shadow-sm">
 
               <h2 className="text-xl font-bold">
-                Business Readiness
+                {t("dashboard.scoreTitle")}
               </h2>
 
               <div className="mt-8 flex justify-center">
@@ -524,22 +516,22 @@ export default function Dashboard() {
               </p>
 
               <div className="mt-5 rounded-xl bg-green-50 p-4 text-xs text-slate-600">
-                <p className="font-semibold text-slate-800">Why this score?</p>
+                <p className="font-semibold text-slate-800">{t("dashboard.whyScore")}</p>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <span>Profile: {readiness.factors.profile}/20</span>
-                  <span>Financial Health: {readiness.factors.financialHealth}/40</span>
-                  <span>Stability: {readiness.factors.stability}/20</span>
-                  <span>Budget: {readiness.factors.budget}/10</span>
-                  <span>Experience: {readiness.factors.experience}/10</span>
+                  <span>{t("dashboard.profile")}: {readiness.factors.profile}/20</span>
+                  <span>{t("dashboard.financialHealth")}: {readiness.factors.financialHealth}/40</span>
+                  <span>{t("dashboard.stability")}: {readiness.factors.stability}/20</span>
+                  <span>{t("common.budget")}: {readiness.factors.budget}/10</span>
+                  <span>{t("common.experience")}: {readiness.factors.experience}/10</span>
                 </div>
-                <p className="mt-3 font-semibold text-green-700">Total: {readiness.readinessScore}/100</p>
+                <p className="mt-3 font-semibold text-green-700">{t("dashboard.total")}: {readiness.readinessScore}/100</p>
               </div>
 
               <div className="mt-6 space-y-4 border-t pt-5 text-sm">
 
                 <div className="flex justify-between">
                   <span className="text-slate-500">
-                    Profile Completion
+                    {t("dashboard.profileCompletion")}
                   </span>
 
                   <span className="font-semibold text-green-700">
@@ -549,29 +541,29 @@ export default function Dashboard() {
 
                 <div className="flex justify-between">
                   <span className="text-slate-500">
-                    Available Budget
+                    {t("common.availableBudget")}
                   </span>
 
                   <span className="font-semibold text-green-700">
                     {user.budget !== undefined && user.budget !== null && String(user.budget).trim() !== ""
                       ? `₹${Number(user.budget).toLocaleString("en-IN")}`
-                      : "Not provided"}
+                      : t("dashboard.notProvided")}
                   </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-slate-500">
-                    Experience
+                    {t("common.experience")}
                   </span>
 
                   <span className="font-semibold">
-                    {user.experience || "Not provided"}
+                    {user.experience || t("dashboard.notProvided")}
                   </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-slate-500">
-                    Financial Records
+                    {t("dashboard.financialRecords")}
                   </span>
 
                   <span className="font-semibold">
@@ -596,13 +588,14 @@ export default function Dashboard() {
                 </span>
 
                 <h2 className="text-xl font-bold">
-                  What-If Simulator
+                  {t("dashboard.whatIf")}
                 </h2>
 
               </div>
 
               <WhatIfSimulator
                 records={financialRecords}
+                language={user.language}
               />
 
             </div>
@@ -616,12 +609,12 @@ export default function Dashboard() {
                 </span>
 
                 <h2 className="text-xl font-bold">
-                  3-Month Risk Analysis
+                  {t("dashboard.riskAnalysis")}
                 </h2>
 
               </div>
 
-              <RiskAnalysis records={financialRecords} />
+              <RiskAnalysis records={financialRecords} language={user.language} />
 
             </div>
 
@@ -632,6 +625,7 @@ export default function Dashboard() {
               records={financialRecords}
               onEdit={handleEditRecord}
               onDelete={handleDeleteRecord}
+              language={user.language}
             />
           </div>
 
@@ -644,28 +638,28 @@ export default function Dashboard() {
 
               <div>
                 <h2 className="text-xl font-bold">
-                  AI Business Insights
+                  {t("dashboard.aiInsights")}
                 </h2>
 
                 <p className="text-sm text-slate-500">
-                  Short guidance based on your profile and available business data.
+                  {t("dashboard.insightsSubtitle")}
                 </p>
               </div>
             </div>
 
             {insightsLoading ? (
               <p className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-                Loading business insights...
+                {t("dashboard.insightsLoading")}
               </p>
             ) : !insights ? (
               <p className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-                No business insights are available yet.
+                {t("dashboard.insightsEmpty")}
               </p>
             ) : (
               <div className="mt-6 space-y-5">
                 {insights.isFallback && (
                   <p className="text-xs font-medium text-amber-700">
-                    AI unavailable — Showing rule-based business insight
+                    {t("dashboard.aiFallback")}
                   </p>
                 )}
                 <p className="rounded-xl bg-green-50 p-4 text-sm leading-6 text-slate-700">
@@ -675,7 +669,7 @@ export default function Dashboard() {
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="rounded-xl bg-blue-50 p-4">
                     <p className="text-sm font-semibold text-blue-700">
-                      Opportunities
+                      {t("dashboard.opportunities")}
                     </p>
                     <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
                       {insights.opportunities.map((item) => (
@@ -686,7 +680,7 @@ export default function Dashboard() {
 
                   <div className="rounded-xl bg-red-50 p-4">
                     <p className="text-sm font-semibold text-red-700">
-                      Risks
+                      {t("dashboard.risks")}
                     </p>
                     <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
                       {insights.risks.map((item) => (
@@ -697,7 +691,7 @@ export default function Dashboard() {
 
                   <div className="rounded-xl bg-orange-50 p-4">
                     <p className="text-sm font-semibold text-orange-700">
-                      Next Steps
+                      {t("dashboard.nextSteps")}
                     </p>
                     <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
                       {insights.nextSteps.map((item) => (
@@ -714,7 +708,7 @@ export default function Dashboard() {
           <section className="mt-8">
 
             <h2 className="text-xl font-bold">
-              Quick Access
+              {t("dashboard.quickAccess")}
             </h2>
 
             <div className="mt-5 grid gap-5 md:grid-cols-3">
@@ -729,16 +723,15 @@ export default function Dashboard() {
                 </div>
 
                 <h3 className="mt-5 text-lg font-bold">
-                  AI Business Guide
+                  {t("dashboard.aiGuide")}
                 </h3>
 
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  अपने business idea, budget और location के आधार पर
-                  personalized guidance पाएं।
+                  {t("dashboard.aiGuideDescription")}
                 </p>
 
                 <p className="mt-5 font-semibold text-green-700">
-                  Open AI Guide →
+                  {t("dashboard.openAiGuide")} →
                 </p>
 
               </div>
@@ -753,16 +746,15 @@ export default function Dashboard() {
                 </div>
 
                 <h3 className="mt-5 text-lg font-bold">
-                  Government Schemes
+                  {t("dashboard.schemes")}
                 </h3>
 
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  आपके business के लिए relevant सरकारी योजनाओं
-                  की जानकारी देखें।
+                  {t("dashboard.schemesDescription")}
                 </p>
 
                 <p className="mt-5 font-semibold text-blue-700">
-                  View Schemes →
+                  {t("dashboard.viewSchemes")} →
                 </p>
 
               </div>
@@ -777,16 +769,15 @@ export default function Dashboard() {
                 </div>
 
                 <h3 className="mt-5 text-lg font-bold">
-                  Business Growth
+                  {t("dashboard.growth")}
                 </h3>
 
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  नए customers, markets और growth opportunities
-                  खोजने में मदद पाएं।
+                  {t("dashboard.growthDescription")}
                 </p>
 
                 <p className="mt-5 font-semibold text-orange-600">
-                  Explore Growth →
+                  {t("dashboard.exploreGrowth")} →
                 </p>
 
               </div>
@@ -798,12 +789,11 @@ export default function Dashboard() {
           <section className="mt-8 mb-10 rounded-2xl border bg-white p-6 shadow-sm">
 
             <h2 className="text-lg font-bold">
-              सहायता चाहिए?
+              {t("dashboard.needHelp")}
             </h2>
 
             <p className="mt-2 text-sm text-slate-600">
-              VyaparMitra आपके business journey में सही information,
-              schemes और resources तक पहुंचने में मदद करता है।
+              {t("dashboard.helpDescription")}
             </p>
 
           </section>
@@ -815,7 +805,7 @@ export default function Dashboard() {
       <footer className="border-t bg-white">
 
         <div className="mx-auto max-w-7xl px-6 py-5 text-center text-sm text-slate-500">
-          VyaparMitra — छोटे व्यवसायों के लिए डिजिटल मार्गदर्शन
+          VyaparMitra — {t("common.footer")}
         </div>
 
       </footer>
@@ -826,6 +816,7 @@ export default function Dashboard() {
           record={editingRecord}
           onClose={() => { setEditingRecord(null); setIsRecordModalOpen(false); }}
           onSave={handleSaveRecord}
+          language={user.language}
         />
       )}
 

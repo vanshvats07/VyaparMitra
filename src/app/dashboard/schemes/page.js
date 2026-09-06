@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/useLanguage";
 
 const CATEGORIES = ["All", "Agriculture", "Dairy", "Food Processing", "Retail", "MSME", "Self Employment", "Women Entrepreneurs", "Other"];
 
@@ -17,6 +18,7 @@ function Detail({ label, children }) {
 
 export default function Schemes() {
   const router = useRouter();
+  const { t, language } = useLanguage();
 
   const [schemes, setSchemes] = useState([]);
   const [search, setSearch] = useState("");
@@ -71,7 +73,7 @@ export default function Schemes() {
             </p>
 
             <p className="text-xs text-slate-500">
-              व्यवसाय मार्गदर्शन एवं सहायता
+              {t("dashboard.businessSupport")}
             </p>
           </div>
 
@@ -79,7 +81,7 @@ export default function Schemes() {
             onClick={() => router.push("/dashboard")}
             className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            ← Dashboard
+            ← {t("common.dashboard")}
           </button>
 
         </div>
@@ -93,7 +95,7 @@ export default function Schemes() {
           </p>
 
           <h1 className="mt-2 text-4xl font-bold text-slate-900">
-            Government Schemes
+            {t("dashboard.schemes")}
           </h1>
 
           <div className="mt-4">
@@ -103,8 +105,7 @@ export default function Schemes() {
           </div>
 
           <p className="mt-3 max-w-2xl text-slate-600">
-            अपने business और location के अनुसार relevant सरकारी
-            योजनाएं और financial support खोजें।
+            {language === "hi" ? "अपने व्यवसाय और स्थान के अनुसार सरकारी योजनाएं और वित्तीय सहायता खोजें।" : "Find government schemes and financial support relevant to your business and location."}
           </p>
 
           {isDemo ? (
@@ -126,7 +127,7 @@ export default function Schemes() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search schemes..."
+              placeholder={language === "hi" ? "योजनाएं खोजें..." : "Search schemes..."}
               className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-green-600 md:flex-1"
             />
 
@@ -143,7 +144,7 @@ export default function Schemes() {
             </select>
 
             <button onClick={loadSchemes} disabled={isLoading} className="rounded-xl border border-green-700 px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">
-              {isLoading ? "Refreshing..." : "Refresh"}
+              {isLoading ? t("common.loading") : (language === "hi" ? "रिफ्रेश करें" : "Refresh")}
             </button>
 
           </div>

@@ -82,10 +82,13 @@ export function calculateBusinessReadiness(user = {}, financialRecords = []) {
   return { profileCompletion: profile.completion, readinessScore, financialRecordCount: records.length, factors };
 }
 
-export function getReadinessLabel(score) {
-  if (score >= 90) return "Business Ready";
-  if (score >= 75) return "Good Foundation";
-  if (score >= 60) return "Moderate Readiness";
-  if (score >= 40) return "Getting Started";
-  return "Needs Attention";
+export function getReadinessLabel(score, language = "en") {
+  const labels = language === "hi"
+    ? ["ध्यान देने की जरूरत", "शुरुआत हो गई है", "मध्यम तैयारी", "अच्छी नींव", "व्यवसाय तैयार है"]
+    : ["Needs Attention", "Getting Started", "Moderate Readiness", "Good Foundation", "Business Ready"];
+  if (score >= 90) return labels[4];
+  if (score >= 75) return labels[3];
+  if (score >= 60) return labels[2];
+  if (score >= 40) return labels[1];
+  return labels[0];
 }

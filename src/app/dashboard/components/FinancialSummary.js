@@ -1,10 +1,13 @@
 "use client";
 
+import { useLanguage } from "@/lib/useLanguage";
+
 function formatCurrency(value) {
   return `₹${Math.round(value).toLocaleString("en-IN")}`;
 }
 
-export default function FinancialSummary({ records }) {
+export default function FinancialSummary({ records, language }) {
+  const { t } = useLanguage(language);
   const totals = records.reduce(
     (summary, record) => ({
       sales: summary.sales + Number(record.sales || 0),
@@ -16,10 +19,10 @@ export default function FinancialSummary({ records }) {
   const margin = totals.sales > 0 ? (totals.profit / totals.sales) * 100 : 0;
 
   const items = [
-    ["Total Sales", formatCurrency(totals.sales), "text-green-700"],
-    ["Total Expenses", formatCurrency(totals.expenses), "text-red-600"],
-    ["Total Profit", formatCurrency(totals.profit), totals.profit >= 0 ? "text-green-700" : "text-red-600"],
-    ["Profit Margin", `${margin.toFixed(1)}%`, "text-blue-700"],
+    [t("financial.totalSales"), formatCurrency(totals.sales), "text-green-700"],
+    [t("financial.totalExpenses"), formatCurrency(totals.expenses), "text-red-600"],
+    [t("financial.totalProfit"), formatCurrency(totals.profit), totals.profit >= 0 ? "text-green-700" : "text-red-600"],
+    [t("financial.profitMargin"), `${margin.toFixed(1)}%`, "text-blue-700"],
   ];
 
   return (

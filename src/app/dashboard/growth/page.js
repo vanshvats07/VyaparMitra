@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getGrowthActions, getGrowthTip } from "@/lib/businessRecommendations";
+import { useLanguage } from "@/lib/useLanguage";
 
 export default function Growth() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export default function Growth() {
   const [error, setError] = useState("");
   const [metrics, setMetrics] = useState([]);
   const [selectedAction, setSelectedAction] = useState(null);
+  const { t } = useLanguage(user?.language);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -39,7 +41,7 @@ export default function Growth() {
   if (!user) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-600">{error || "Loading..."}</p>
+        <p className="text-slate-600">{error || t("common.loading")}</p>
       </main>
     );
   }
@@ -58,7 +60,7 @@ export default function Growth() {
               🚩 VyaparMitra
             </p>
             <p className="text-xs text-slate-500">
-              Aapka Business Digital Mitra
+              {t("common.footer")}
             </p>
           </div>
 
@@ -66,7 +68,7 @@ export default function Growth() {
             onClick={() => router.push("/dashboard")}
             className="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-slate-50"
           >
-            ← Dashboard
+            ← {t("common.dashboard")}
           </button>
 
         </div>
@@ -81,16 +83,15 @@ export default function Growth() {
           </div>
 
           <p className="mt-6 text-sm font-semibold text-orange-100">
-            BUSINESS GROWTH
+            {t("dashboard.growthEyebrow")}
           </p>
 
           <h1 className="mt-2 text-3xl font-bold md:text-4xl">
-            Grow your business 🚀
+            {t("dashboard.growthTitle")} 🚀
           </h1>
 
           <p className="mt-4 max-w-2xl text-orange-50">
-            {user.businessIdea} ko grow karne ke liye customers,
-            sales aur marketing par focus karein.
+            {user.businessIdea}: {t("dashboard.growthSubtitle")}
           </p>
 
         </section>
@@ -99,7 +100,7 @@ export default function Growth() {
 
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
             <p className="text-sm text-slate-500">
-              Current Business
+              {t("common.currentBusiness")}
             </p>
             <p className="mt-2 text-lg font-bold">
               {user.businessIdea}
@@ -108,7 +109,7 @@ export default function Growth() {
 
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
             <p className="text-sm text-slate-500">
-              Available Budget
+              {t("common.availableBudget")}
             </p>
             <p className="mt-2 text-lg font-bold text-green-700">
               ₹{Number(user.budget).toLocaleString("en-IN")}
@@ -117,7 +118,7 @@ export default function Growth() {
 
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
             <p className="text-sm text-slate-500">
-              Location
+              {t("common.location")}
             </p>
             <p className="mt-2 text-lg font-bold">
               {user.district}, {user.state}
@@ -129,12 +130,11 @@ export default function Growth() {
         <section className="mt-10">
 
           <h2 className="text-2xl font-bold">
-            Growth Opportunities
+            {t("dashboard.growthOpportunities")}
           </h2>
 
           <p className="mt-2 text-slate-600">
-            Apne business ko improve karne ke liye important areas
-            par focus karein.
+            {user.language === "hi" ? "अपने व्यवसाय को बेहतर बनाने के लिए महत्वपूर्ण क्षेत्रों पर ध्यान दें।" : "Focus on the important areas that can improve your business."}
           </p>
 
           <div className="mt-6 grid gap-5 md:grid-cols-3">
@@ -158,7 +158,7 @@ export default function Growth() {
                 onClick={() => setSelectedAction(action)}
                 className="mt-5 font-semibold text-blue-700"
               >
-                Learn More →
+                {t("common.learnMore")} →
               </button>
 
             </div>
@@ -171,7 +171,7 @@ export default function Growth() {
         <section className="mt-10">
 
           <h2 className="text-2xl font-bold">
-            Recommended Actions
+            {t("dashboard.recommendedActions")}
           </h2>
 
           <div className="mt-6 space-y-4">
@@ -219,7 +219,7 @@ export default function Growth() {
 
             <div>
               <h2 className="font-bold">
-                Growth Tip
+                {t("dashboard.growthTip")}
               </h2>
 
               <p className="text-sm text-slate-500">
@@ -254,7 +254,7 @@ export default function Growth() {
                 {selectedAction.detail}
               </p>
               <button type="button" onClick={() => setSelectedAction(null)} className="mt-6 w-full rounded-xl bg-green-700 py-3 text-sm font-semibold text-white hover:bg-green-800">
-                Done
+                {t("common.done")}
               </button>
             </section>
           </div>
@@ -264,7 +264,7 @@ export default function Growth() {
 
       <footer className="border-t bg-white">
         <div className="mx-auto max-w-6xl px-6 py-5 text-center text-sm text-slate-500">
-          VyaparMitra — Aapka Business Digital Mitra
+          VyaparMitra — {t("common.footer")}
         </div>
       </footer>
 

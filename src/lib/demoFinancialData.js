@@ -143,25 +143,26 @@ export function getDemoBusinessInsights(user = {}, financialData = [], simulator
   const category = profile.businessCategory || profile.businessIdea || "your business";
   const location = [profile.district, profile.state].filter(Boolean).join(", ");
   const isDemo = data.some((item) => item.isDemo);
+  const hindi = profile.language === "hi";
   const simulatorText = simulator
-    ? `At the selected scenario, projected profit is ${Math.round(simulator.projectedProfit).toLocaleString("en-IN")}.`
-    : `The recent average monthly profit is ${Math.round(risk.projectedProfit / 3).toLocaleString("en-IN")}.`;
+    ? (hindi ? `चुनी गई स्थिति में अनुमानित लाभ ₹${Math.round(simulator.projectedProfit).toLocaleString("en-IN")} है।` : `At the selected scenario, projected profit is ₹${Math.round(simulator.projectedProfit).toLocaleString("en-IN")}.`)
+    : (hindi ? `हाल का औसत मासिक लाभ ₹${Math.round(risk.projectedProfit / 3).toLocaleString("en-IN")} है।` : `The recent average monthly profit is ₹${Math.round(risk.projectedProfit / 3).toLocaleString("en-IN")}.`);
 
   return {
-    summary: `This ${isDemo ? "sample" : "rule-based"} analysis for ${category} in ${location || "your location"} suggests a ${risk.riskLevel.toLowerCase()} operating position. ${simulatorText}`,
+    summary: hindi ? `${location || "आपके स्थान"} में ${category} के लिए यह ${isDemo ? "नमूना" : "नियम-आधारित"} विश्लेषण ${risk.riskLevel === "Low" ? "कम" : risk.riskLevel === "High" ? "उच्च" : "मध्यम"} संचालन जोखिम दिखाता है। ${simulatorText}` : `This ${isDemo ? "sample" : "rule-based"} analysis for ${category} in ${location || "your location"} suggests a ${risk.riskLevel.toLowerCase()} operating position. ${simulatorText}`,
     opportunities: [
-      `Track weekly sales and expenses to improve the ${category} cash buffer.`,
-      `Test small pricing or volume changes before committing more of the ₹${Number(profile.budget || 0).toLocaleString("en-IN")} budget.`,
+      hindi ? `${category} के नकद बचाव को बेहतर बनाने के लिए साप्ताहिक बिक्री और खर्च दर्ज करें।` : `Track weekly sales and expenses to improve the ${category} cash buffer.`,
+      hindi ? `₹${Number(profile.budget || 0).toLocaleString("en-IN")} का अधिक बजट लगाने से पहले छोटे मूल्य या मात्रा बदलाव आजमाएं।` : `Test small pricing or volume changes before committing more of the ₹${Number(profile.budget || 0).toLocaleString("en-IN")} budget.`,
     ],
     risks: [
-      `Expenses use about ${Math.round(risk.expenseRatio * 100)}% of recent sample revenue.`,
-      `This is a rule-based analysis, not a guarantee about future results.`,
+      hindi ? `हाल की नमूना आय में खर्च लगभग ${Math.round(risk.expenseRatio * 100)}% है।` : `Expenses use about ${Math.round(risk.expenseRatio * 100)}% of recent sample revenue.`,
+      hindi ? "यह नियम-आधारित विश्लेषण है, भविष्य के परिणाम की गारंटी नहीं।" : "This is a rule-based analysis, not a guarantee about future results.",
     ],
     nextSteps: [
       isDemo
-        ? "Add monthly financial records to replace the sample baseline."
-        : "Continue recording monthly financial results for more precise guidance.",
-      `Review the next 3 months of cash needs before expanding ${category}.`,
+        ? (hindi ? "नमूना आधार को बदलने के लिए मासिक वित्तीय रिकॉर्ड जोड़ें।" : "Add monthly financial records to replace the sample baseline.")
+        : (hindi ? "बेहतर मार्गदर्शन के लिए मासिक वित्तीय परिणाम दर्ज करते रहें।" : "Continue recording monthly financial results for more precise guidance."),
+      hindi ? `${category} बढ़ाने से पहले अगले 3 महीनों की नकद जरूरत देखें।` : `Review the next 3 months of cash needs before expanding ${category}.`,
     ],
     isDemo,
   };

@@ -9,6 +9,7 @@ import {
   getGrowthActions,
   getLocationStrategy,
 } from "@/lib/businessRecommendations";
+import { useLanguage } from "@/lib/useLanguage";
 
 export default function AIGuide() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function AIGuide() {
   const [recommendations, setRecommendations] = useState([]);
   const [recommendationError, setRecommendationError] = useState("");
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const { t } = useLanguage(user?.language);
   const {
     supported: speechSupported,
     listening,
@@ -115,7 +117,7 @@ export default function AIGuide() {
   if (!user) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-600">{userError || "Loading..."}</p>
+        <p className="text-slate-600">{userError || t("common.loading")}</p>
       </main>
     );
   }
@@ -136,7 +138,7 @@ export default function AIGuide() {
               🚩 VyaparMitra
             </p>
             <p className="text-xs text-slate-500">
-              Aapka Business Digital Mitra
+              {t("common.footer")}
             </p>
           </div>
 
@@ -144,7 +146,7 @@ export default function AIGuide() {
             onClick={() => router.push("/dashboard")}
             className="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-slate-50"
           >
-            ← Dashboard
+            ← {t("common.dashboard")}
           </button>
 
         </div>
@@ -159,7 +161,7 @@ export default function AIGuide() {
           </div>
 
           <p className="mt-6 text-sm font-semibold text-green-100">
-            AI BUSINESS GUIDE
+            {t("dashboard.aiGuide")}
           </p>
 
           <h1 className="mt-2 text-3xl font-bold md:text-4xl">
@@ -178,7 +180,7 @@ export default function AIGuide() {
 
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
             <p className="text-sm text-slate-500">
-              Business Idea
+              {t("common.businessIdea")}
             </p>
             <p className="mt-2 text-lg font-bold">
               {user.businessIdea}
@@ -187,7 +189,7 @@ export default function AIGuide() {
 
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
             <p className="text-sm text-slate-500">
-              Available Budget
+              {t("common.availableBudget")}
             </p>
             <p className="mt-2 text-lg font-bold text-green-700">
               ₹{Number(user.budget).toLocaleString("en-IN")}
@@ -196,7 +198,7 @@ export default function AIGuide() {
 
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
             <p className="text-sm text-slate-500">
-              Location
+              {t("common.location")}
             </p>
             <p className="mt-2 text-lg font-bold">
               {user.district}, {user.state}
@@ -208,11 +210,11 @@ export default function AIGuide() {
         <section className="mt-8">
 
           <h2 className="text-2xl font-bold">
-            What do you want help with?
+            {user.language === "hi" ? "आप किस विषय में मदद चाहते हैं?" : "What do you want help with?"}
           </h2>
 
           <p className="mt-2 text-slate-600">
-            Choose a topic to explore business guidance.
+            {user.language === "hi" ? "व्यवसाय मार्गदर्शन के लिए कोई विषय चुनें।" : "Choose a topic to explore business guidance."}
           </p>
 
           <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -230,7 +232,7 @@ export default function AIGuide() {
               </p>
 
               <p className="mt-5 font-semibold text-green-700">
-                Explore →
+                {t("common.explore")} →
               </p>
             </div>
 
@@ -247,7 +249,7 @@ export default function AIGuide() {
               </p>
 
               <p className="mt-5 font-semibold text-green-700">
-                Plan Budget →
+                {user.language === "hi" ? "बजट योजना बनाएं" : "Plan Budget"} →
               </p>
             </div>
 
@@ -264,7 +266,7 @@ export default function AIGuide() {
               </p>
 
               <p className="mt-5 font-semibold text-green-700">
-                View Strategy →
+                {t("common.viewStrategy")} →
               </p>
             </div>
 
@@ -280,7 +282,7 @@ export default function AIGuide() {
               </p>
 
               <p className="mt-5 font-semibold text-green-700">
-                Explore Growth →
+                {t("common.explore")} →
               </p>
             </div>
 
@@ -295,11 +297,11 @@ export default function AIGuide() {
 
             <div>
               <h2 className="font-bold">
-                Personalized AI Guidance
+                {user.language === "hi" ? "व्यक्तिगत एआई मार्गदर्शन" : "Personalized AI Guidance"}
               </h2>
 
               <p className="text-sm text-slate-500">
-                AI recommendations will appear here.
+                {user.language === "hi" ? "एआई सुझाव यहां दिखाई देंगे।" : "AI recommendations will appear here."}
               </p>
             </div>
           </div>
@@ -309,7 +311,7 @@ export default function AIGuide() {
               <textarea
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Ask a question about your business..."
+                placeholder={user.language === "hi" ? "अपने व्यवसाय के बारे में प्रश्न पूछें..." : "Ask a question about your business..."}
                 rows="4"
                 maxLength="2000"
                 className="w-full resize-none rounded-xl border px-4 py-3 pr-16 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
@@ -353,7 +355,7 @@ export default function AIGuide() {
               disabled={asking || !question.trim()}
               className="rounded-xl bg-green-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-60"
             >
-              {asking ? "Thinking..." : "Ask AI Guide"}
+              {asking ? (user.language === "hi" ? "सोच रहा है..." : "Thinking...") : (user.language === "hi" ? "एआई गाइड से पूछें" : "Ask AI Guide")}
             </button>
 
             <button
@@ -363,8 +365,8 @@ export default function AIGuide() {
               className="ml-3 rounded-xl border border-green-700 px-5 py-3 text-sm font-semibold text-green-700 transition hover:bg-green-50 disabled:opacity-60"
             >
               {loadingRecommendations
-                ? "Preparing recommendations..."
-                : "Get Recommendations"}
+                ? (user.language === "hi" ? "सुझाव तैयार हो रहे हैं..." : "Preparing recommendations...")
+                : (user.language === "hi" ? "सुझाव पाएं" : "Get Recommendations")}
             </button>
 
             {answer && (
@@ -398,7 +400,7 @@ export default function AIGuide() {
                       {recommendation.description}
                     </p>
                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                      Why this fits: {recommendation.reason}
+                      {user.language === "hi" ? "यह क्यों सही है" : "Why this fits"}: {recommendation.reason}
                     </p>
                   </article>
                 ))}
@@ -412,7 +414,7 @@ export default function AIGuide() {
 
       <footer className="border-t bg-white">
         <div className="mx-auto max-w-6xl px-6 py-5 text-center text-sm text-slate-500">
-          VyaparMitra — Aapka Business Digital Mitra
+          VyaparMitra — {t("common.footer")}
         </div>
       </footer>
 

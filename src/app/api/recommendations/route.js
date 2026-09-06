@@ -15,6 +15,7 @@ import {
 function buildRecommendationPrompt({ user, schemes, history, calculatedMetrics }) {
   return `You are a practical business advisor for small businesses in India.
 Create personalized recommendations using only the supplied information.
+Write every title, description, and reason entirely in ${user.language === "hi" ? "simple, natural Hindi" : "clear English"}. Do not mix languages.
 
 Return JSON only, with this exact shape:
 {
@@ -96,7 +97,7 @@ export async function POST(request) {
     await connectDB();
 
     const user = await User.findById(userId)
-      .select("name phone businessIdea businessCategory budget experience state district")
+      .select("name phone businessIdea businessCategory budget experience state district language")
       .lean();
 
     if (!user) {

@@ -6,6 +6,7 @@ import { readJsonResponse } from "@/lib/clientHttp";
 import states from "india-location-data/src/data/states.json";
 import districts from "india-location-data/src/data/districts.json";
 import blocks from "india-location-data/src/data/blocks.json";
+import { useLanguage } from "@/lib/useLanguage";
 
 const sortedStates = [...states].sort((first, second) =>
   first.name.localeCompare(second.name)
@@ -32,6 +33,7 @@ export default function Onboarding() {
     password: "",
     confirmPassword: "",
   });
+  const { setLanguage, t } = useLanguage(form.language);
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -202,7 +204,7 @@ export default function Onboarding() {
             </p>
 
             <p className="text-xs text-slate-500">
-              Your Digital Business Mitra
+              {t("common.footer")}
             </p>
           </div>
 
@@ -210,7 +212,7 @@ export default function Onboarding() {
             onClick={() => router.push("/")}
             className="text-sm font-semibold text-slate-600 hover:text-green-700"
           >
-            ← Home
+            ← {t("common.back")}
           </button>
 
         </div>
@@ -225,12 +227,11 @@ export default function Onboarding() {
           </div>
 
           <h1 className="mt-5 text-3xl font-bold text-slate-900 md:text-4xl">
-            Tell Us About Your Business
+            {form.language === "hi" ? "अपने व्यवसाय के बारे में बताएं" : "Tell Us About Your Business"}
           </h1>
 
           <p className="mx-auto mt-3 max-w-2xl text-slate-600">
-            कुछ basic information दें ताकि VyaparMitra
-            आपके लिए बेहतर business guidance तैयार कर सके।
+            {form.language === "hi" ? "कुछ जानकारी दें ताकि VyaparMitra आपके लिए बेहतर व्यवसाय मार्गदर्शन तैयार कर सके।" : "Share a few details so VyaparMitra can prepare better business guidance for you."}
           </p>
 
         </div>
@@ -248,7 +249,7 @@ export default function Onboarding() {
                   onClick={() => router.push("/login")}
                   className="mt-3 block rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100"
                 >
-                  Go to Login
+                  {form.language === "hi" ? "लॉग इन पर जाएं" : "Go to Login"}
                 </button>
               )}
             </div>
@@ -256,11 +257,11 @@ export default function Onboarding() {
 
           <div className="mb-8">
             <h2 className="text-xl font-bold text-slate-900">
-              👤 Personal Information
+              👤 {form.language === "hi" ? "व्यक्तिगत जानकारी" : "Personal Information"}
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              अपने बारे में basic information दें।
+              {form.language === "hi" ? "अपने बारे में जरूरी जानकारी दें।" : "Share your basic information."}
             </p>
           </div>
 
@@ -268,7 +269,7 @@ export default function Onboarding() {
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                Your Name
+                {form.language === "hi" ? "आपका नाम" : "Your Name"}
               </label>
 
               <input
@@ -283,7 +284,7 @@ export default function Onboarding() {
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                Phone Number
+                {form.language === "hi" ? "फ़ोन नंबर" : "Phone Number"}
               </label>
 
               <input
@@ -319,7 +320,7 @@ export default function Onboarding() {
 
           <div className="mb-8 mt-10">
             <h2 className="text-xl font-bold text-slate-900">
-              📍 Location
+              📍 {t("common.location")}
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
@@ -331,7 +332,7 @@ export default function Onboarding() {
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                State
+                {form.language === "hi" ? "राज्य" : "State"}
               </label>
 
               <select
@@ -352,7 +353,7 @@ export default function Onboarding() {
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                District
+                {form.language === "hi" ? "जिला" : "District"}
               </label>
 
               <select
@@ -376,7 +377,7 @@ export default function Onboarding() {
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                Village / City
+                {form.language === "hi" ? "गांव / शहर" : "Village / City"}
               </label>
 
               {availableVillages.length > 0 ? (
@@ -435,7 +436,7 @@ export default function Onboarding() {
 
           <div className="mb-8 mt-10">
             <h2 className="text-xl font-bold text-slate-900">
-              🏪 Business Information
+              🏪 {form.language === "hi" ? "व्यवसाय की जानकारी" : "Business Information"}
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
@@ -447,7 +448,7 @@ export default function Onboarding() {
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                Business Idea
+                {t("common.businessIdea")}
               </label>
 
               <textarea
@@ -463,7 +464,7 @@ export default function Onboarding() {
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                Business Category
+                {form.language === "hi" ? "व्यवसाय श्रेणी" : "Business Category"}
               </label>
 
               <select
@@ -515,7 +516,7 @@ export default function Onboarding() {
 
           <div className="mb-8 mt-10">
             <h2 className="text-xl font-bold text-slate-900">
-              💰 Financial Information
+              💰 {form.language === "hi" ? "वित्तीय जानकारी" : "Financial Information"}
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
@@ -527,7 +528,7 @@ export default function Onboarding() {
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                Available Budget
+                {t("common.availableBudget")}
               </label>
 
               <div className="relative mt-2">
@@ -552,7 +553,7 @@ export default function Onboarding() {
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                Business Experience
+                {form.language === "hi" ? "व्यवसाय अनुभव" : "Business Experience"}
               </label>
 
               <select
@@ -585,7 +586,7 @@ export default function Onboarding() {
 
           <div className="mb-8 mt-10">
             <h2 className="text-xl font-bold text-slate-900">
-              🌐 Language Preference
+              🌐 {form.language === "hi" ? "भाषा चुनें" : "Language Preference"}
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
@@ -598,10 +599,10 @@ export default function Onboarding() {
             <button
               type="button"
               onClick={() =>
-                setForm({
+                (setLanguage("en"), setForm({
                   ...form,
                   language: "en",
-                })
+                }))
               }
               className={`rounded-xl border p-4 text-left transition ${
                 form.language === "en"
@@ -619,10 +620,10 @@ export default function Onboarding() {
             <button
               type="button"
               onClick={() =>
-                setForm({
+                (setLanguage("hi"), setForm({
                   ...form,
                   language: "hi",
-                })
+                }))
               }
               className={`rounded-xl border p-4 text-left transition ${
                 form.language === "hi"
@@ -633,7 +634,7 @@ export default function Onboarding() {
               <p className="font-bold">🇮🇳 हिंदी</p>
 
               <p className="mt-1 text-sm text-slate-500">
-                हिंदी में business guidance
+                हिंदी में व्यवसाय मार्गदर्शन
               </p>
             </button>
 
@@ -644,7 +645,7 @@ export default function Onboarding() {
             <div className="rounded-xl bg-green-50 p-4">
 
               <p className="text-sm font-semibold text-green-800">
-                🔒 Your information is safe
+                🔒 {form.language === "hi" ? "आपकी जानकारी सुरक्षित है" : "Your information is safe"}
               </p>
 
               <p className="mt-1 text-xs leading-5 text-green-700">
@@ -660,10 +661,10 @@ export default function Onboarding() {
               className="mt-5 w-full rounded-xl bg-green-600 py-4 text-base font-bold text-white transition hover:bg-green-700 disabled:opacity-60"
             >
               {loading
-                ? "Saving Your Profile..."
+                ? (form.language === "hi" ? "प्रोफ़ाइल सेव हो रही है..." : "Saving Your Profile...")
                 : editingUserId
-                  ? "Save Profile Changes →"
-                  : "Create My Business Dashboard →"}
+                  ? (form.language === "hi" ? "प्रोफ़ाइल बदलाव सेव करें →" : "Save Profile Changes →")
+                  : (form.language === "hi" ? "मेरा व्यवसाय डैशबोर्ड बनाएं →" : "Create My Business Dashboard →")}
             </button>
 
             {!editingUserId && (

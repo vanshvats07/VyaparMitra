@@ -1,12 +1,15 @@
 "use client";
 
+import { useLanguage } from "@/lib/useLanguage";
+
 function formatCurrency(value) {
   return `₹${Math.round(value).toLocaleString("en-IN")}`;
 }
 
-export default function RiskAnalysis({ records = [] }) {
+export default function RiskAnalysis({ records = [], language }) {
+  const { t } = useLanguage(language);
   if (records.length < 2) {
-    return <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">Add at least 2-3 financial records to generate a more meaningful risk estimate.</p>;
+    return <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">{t("financial.riskEmpty")}</p>;
   }
 
   const totals = records.reduce((summary, record) => ({
@@ -26,17 +29,17 @@ export default function RiskAnalysis({ records = [] }) {
 
   return (
     <>
-      <p className="mt-2 text-xs font-medium text-amber-700">Estimated from your financial records</p>
+      <p className="mt-2 text-xs font-medium text-amber-700">{t("financial.estimatedFromRecords")}</p>
       <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Average Sales</p><p className="mt-1 font-semibold">{formatCurrency(averageSales)}</p></div>
-        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Average Expenses</p><p className="mt-1 font-semibold">{formatCurrency(averageExpenses)}</p></div>
-        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Average Profit</p><p className={`mt-1 font-semibold ${averageProfit >= 0 ? "text-green-700" : "text-red-600"}`}>{formatCurrency(averageProfit)}</p></div>
-        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Expense Ratio</p><p className="mt-1 font-semibold">{Math.round(expenseRatio * 100)}%</p></div>
+        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">{t("financial.averageSales")}</p><p className="mt-1 font-semibold">{formatCurrency(averageSales)}</p></div>
+        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">{t("financial.averageExpenses")}</p><p className="mt-1 font-semibold">{formatCurrency(averageExpenses)}</p></div>
+        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">{t("financial.averageProfit")}</p><p className={`mt-1 font-semibold ${averageProfit >= 0 ? "text-green-700" : "text-red-600"}`}>{formatCurrency(averageProfit)}</p></div>
+        <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">{t("financial.expenseRatio")}</p><p className="mt-1 font-semibold">{Math.round(expenseRatio * 100)}%</p></div>
       </div>
       <div className="mt-5">
-        <div className="flex justify-between text-sm"><span className="font-semibold">Risk Level: <span className={textColor}>{riskLevel}</span></span><span className="font-semibold">{riskPercentage}%</span></div>
+        <div className="flex justify-between text-sm"><span className="font-semibold">{t("financial.riskLevel")}: <span className={textColor}>{t(`financial.${riskLevel === "Low" ? "low" : riskLevel === "Moderate" ? "moderate" : "high"}`)}</span></span><span className="font-semibold">{riskPercentage}%</span></div>
         <div className="mt-2 h-2 rounded-full bg-slate-200"><div className={`h-2 rounded-full ${riskColor}`} style={{ width: `${riskPercentage}%` }} /></div>
-        <p className="mt-2 text-xs text-slate-500">Profit margin: {Math.round(profitMargin * 100)}%</p>
+        <p className="mt-2 text-xs text-slate-500">{t("financial.profitMargin")}: {Math.round(profitMargin * 100)}%</p>
       </div>
     </>
   );

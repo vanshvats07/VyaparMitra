@@ -19,6 +19,7 @@ import {
 function buildInsightsPrompt({ user, schemes, history, calculatedMetrics }) {
   return `You are a practical business advisor for small businesses in India.
 Create a short business insight report using only the supplied information.
+Write every field entirely in ${user.language === "hi" ? "simple, natural Hindi" : "clear English"}. Do not mix languages.
 
 Return JSON only with this exact shape:
 {
@@ -93,7 +94,7 @@ export async function GET(request) {
     await connectDB();
 
     const user = await User.findById(userId)
-      .select("name phone businessIdea businessCategory budget experience state district")
+      .select("name phone businessIdea businessCategory budget experience state district language")
       .lean();
 
     if (!user) {

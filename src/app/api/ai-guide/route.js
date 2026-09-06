@@ -83,6 +83,7 @@ export async function POST(request) {
 
     const prompt = `You are VyaparMitra, a practical business advisor for small businesses in India.
 Answer the user's question clearly and concisely. Use the business profile below to personalize the advice.
+  Respond entirely in ${user.language === "hi" ? "simple, natural Hindi" : "clear English"}. Do not mix Hindi and English except for user-entered names, places, product names, or unavoidable proper nouns.
 Do not invent government scheme eligibility, guarantees, or financial outcomes. Mention when the user should verify details with an official source.
 
 Business profile:
