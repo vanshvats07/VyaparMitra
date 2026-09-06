@@ -91,7 +91,7 @@ export default function Schemes() {
 
         <section>
           <p className="text-sm font-semibold text-green-700">
-            सरकारी सहायता
+            {t("dashboard.schemePage.support")}
           </p>
 
           <h1 className="mt-2 text-4xl font-bold text-slate-900">
@@ -100,7 +100,7 @@ export default function Schemes() {
 
           <div className="mt-4">
             <span className={`rounded-full px-3 py-2 text-xs font-bold ${isDemo ? "border border-amber-300 bg-amber-50 text-amber-800" : "border border-green-200 bg-green-50 text-green-700"}`}>
-              {isDemo ? "Not Available — Demo Data" : "Live Government Data"}
+              {isDemo ? t("dashboard.schemePage.demo") : t("dashboard.schemePage.live")}
             </span>
           </div>
 
@@ -110,11 +110,11 @@ export default function Schemes() {
 
           {isDemo ? (
             <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-              Live government scheme data is currently unavailable. Showing demo information for preview purposes.
+              {t("dashboard.schemePage.demoNotice")}
             </p>
           ) : (
             <p className="mt-3 text-xs text-slate-500">
-              Live source data{lastUpdated ? ` • Last updated: ${new Date(lastUpdated).toLocaleString("en-IN")}` : ""}
+              {t("dashboard.schemePage.liveSource")}{lastUpdated ? ` • ${t("dashboard.schemePage.lastUpdated")}: ${new Date(lastUpdated).toLocaleString("en-IN")}` : ""}
             </p>
           )}
         </section>
@@ -127,7 +127,7 @@ export default function Schemes() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={language === "hi" ? "योजनाएं खोजें..." : "Search schemes..."}
+              placeholder={t("dashboard.schemePage.search")}
               className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-green-600 md:flex-1"
             />
 
@@ -138,13 +138,13 @@ export default function Schemes() {
             >
               {CATEGORIES.map((item) => (
                 <option key={item} value={item}>
-                  {item}
+                  {item === "All" ? t("dashboard.schemePage.all") : item}
                 </option>
               ))}
             </select>
 
             <button onClick={loadSchemes} disabled={isLoading} className="rounded-xl border border-green-700 px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">
-              {isLoading ? t("common.loading") : (language === "hi" ? "रिफ्रेश करें" : "Refresh")}
+              {isLoading ? t("common.loading") : t("dashboard.schemePage.refresh")}
             </button>
 
           </div>
@@ -156,18 +156,18 @@ export default function Schemes() {
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-slate-900">
-                Available Schemes
+                {t("dashboard.schemePage.available")}
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                {filteredSchemes.length} schemes found
+                {filteredSchemes.length} {t("dashboard.schemePage.found")}
               </p>
             </div>
           </div>
 
           {isLoading ? (
             <div className="rounded-2xl border bg-white p-10 text-center">
-              <p className="text-lg font-semibold">Loading schemes...</p>
+              <p className="text-lg font-semibold">{t("dashboard.schemePage.loading")}</p>
             </div>
           ) : errorMessage ? (
             <div className="rounded-2xl border bg-white p-10 text-center">
@@ -176,11 +176,11 @@ export default function Schemes() {
           ) : filteredSchemes.length === 0 ? (
             <div className="rounded-2xl border bg-white p-10 text-center">
               <p className="text-lg font-semibold">
-                No schemes found
+                {t("dashboard.schemePage.none")}
               </p>
 
               <p className="mt-2 text-sm text-slate-500">
-                Search या category बदलकर फिर try करें।
+                {t("dashboard.schemePage.noResults")}
               </p>
             </div>
           ) : (
@@ -196,7 +196,7 @@ export default function Schemes() {
 
                     <div>
                       <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                        Potentially relevant
+                        {t("dashboard.schemePage.relevant")}
                       </span>
 
                       <h3 className="mt-4 text-xl font-bold text-slate-900">
@@ -219,14 +219,14 @@ export default function Schemes() {
                   </p>
 
                   <p className="mt-4 rounded-xl border border-green-100 bg-green-50 p-3 text-sm leading-6 text-green-900">
-                    <strong>Why this may be relevant:</strong> {scheme.whyRelevant || "Potentially relevant; compare the official eligibility criteria with your profile."}
+                    <strong>{t("dashboard.schemePage.why")}:</strong> {scheme.whyRelevant || t("dashboard.schemePage.defaultWhy")}
                   </p>
 
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
 
                     <div className="rounded-xl bg-slate-50 p-4">
                       <p className="text-xs text-slate-500">
-                        Main Benefit
+                        {t("dashboard.schemePage.benefit")}
                       </p>
 
                       <p className="mt-1 text-sm font-semibold text-slate-900">
@@ -236,7 +236,7 @@ export default function Schemes() {
 
                     <div className="rounded-xl bg-slate-50 p-4">
                       <p className="text-xs text-slate-500">
-                        Required Documents
+                        {t("dashboard.schemePage.documents")}
                       </p>
 
                       <p className="mt-1 text-sm font-semibold text-slate-900">
@@ -249,7 +249,7 @@ export default function Schemes() {
                   <div className="mt-5 border-t pt-5">
 
                     <p className="text-sm font-semibold text-slate-900">
-                      Eligibility
+                      {t("dashboard.schemePage.eligibility")}
                     </p>
 
                     <p className="mt-1 text-sm text-slate-600">
@@ -257,7 +257,7 @@ export default function Schemes() {
                     </p>
 
                     <p className="mt-4 text-sm font-semibold text-slate-900">
-                      Application Process
+                      {t("dashboard.schemePage.application")}
                     </p>
 
                     <p className="mt-1 text-sm text-slate-600">
@@ -265,18 +265,18 @@ export default function Schemes() {
                     </p>
 
                     <p className="mt-4 text-sm font-semibold text-slate-900">
-                      Official Information
+                      {t("dashboard.schemePage.official")}
                     </p>
 
                     <p className="mt-1 text-sm text-slate-600">
                       {scheme.officialUrl
-                        ? "Use the official source for current details."
-                        : "Official source link pending verification."}
+                        ? t("dashboard.schemePage.officialDetails")
+                        : t("dashboard.schemePage.officialPending")}
                     </p>
 
                   </div>
 
-                  {isDemo && <p className="mt-5 text-xs font-semibold text-amber-800">Demo information — verify details on the official government portal.</p>}
+                  {isDemo && <p className="mt-5 text-xs font-semibold text-amber-800">{t("dashboard.schemePage.demoInfo")}</p>}
 
                   {scheme.officialUrl ? (
                     <a
@@ -285,11 +285,11 @@ export default function Schemes() {
                       rel="noreferrer"
                       className="mt-6 block rounded-lg bg-green-700 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-green-800"
                     >
-                      Open Official Information
+                      {t("dashboard.schemePage.openOfficial")}
                     </a>
                   ) : (
                     <p className="mt-6 rounded-lg border border-slate-200 px-4 py-3 text-center text-sm text-slate-500">
-                      Official link pending verification
+                      {t("dashboard.schemePage.officialLink")}
                     </p>
                   )}
 
@@ -304,13 +304,11 @@ export default function Schemes() {
         <section className="mt-10 rounded-2xl border border-green-100 bg-green-50 p-6">
 
           <h2 className="text-lg font-bold text-green-900">
-            💡 Important
+            💡 {t("dashboard.schemePage.important")}
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-green-800">
-            किसी भी government scheme के लिए apply करने से पहले
-            eligibility, required documents और official government
-            portal पर उपलब्ध latest information जरूर verify करें।
+            {t("dashboard.schemePage.importantText")}
           </p>
 
         </section>

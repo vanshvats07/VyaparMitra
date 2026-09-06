@@ -165,13 +165,11 @@ export default function AIGuide() {
           </p>
 
           <h1 className="mt-2 text-3xl font-bold md:text-4xl">
-            Hello {user.name} 👋
+            {t("dashboard.aiGuidePage.hello")} {user.name} 👋
           </h1>
 
           <p className="mt-4 max-w-2xl text-green-100">
-            Aapke business idea, budget aur location ko samajhkar
-            better business decisions lene mein VyaparMitra aapki
-            help karega.
+            {user.language === "hi" ? "आपके व्यवसाय विचार, बजट और स्थान को समझकर VyaparMitra बेहतर निर्णय लेने में आपकी मदद करेगा।" : "VyaparMitra will understand your business idea, budget, and location to help you make better business decisions."}
           </p>
 
         </section>
@@ -210,11 +208,11 @@ export default function AIGuide() {
         <section className="mt-8">
 
           <h2 className="text-2xl font-bold">
-            {user.language === "hi" ? "आप किस विषय में मदद चाहते हैं?" : "What do you want help with?"}
+            {t("dashboard.aiGuidePage.helpTitle")}
           </h2>
 
           <p className="mt-2 text-slate-600">
-            {user.language === "hi" ? "व्यवसाय मार्गदर्शन के लिए कोई विषय चुनें।" : "Choose a topic to explore business guidance."}
+            {t("dashboard.aiGuidePage.helpSubtitle")}
           </p>
 
           <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -223,7 +221,7 @@ export default function AIGuide() {
               <div className="text-3xl">💡</div>
 
               <h3 className="mt-4 text-lg font-bold">
-                Business Idea
+                {t("common.businessIdea")}
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -240,16 +238,16 @@ export default function AIGuide() {
               <div className="text-3xl">💰</div>
 
               <h3 className="mt-4 text-lg font-bold">
-                Business Strategy
+                {t("dashboard.aiGuidePage.businessStrategy")}
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Target customers: {businessStrategy.targetCustomer}. {businessStrategy.pricing}
+                {user.language === "hi" ? "लक्षित ग्राहक" : "Target customers"}: {businessStrategy.targetCustomer}. {businessStrategy.pricing}
                 {" "}{businessStrategy.expenseControl}
               </p>
 
               <p className="mt-5 font-semibold text-green-700">
-                {user.language === "hi" ? "बजट योजना बनाएं" : "Plan Budget"} →
+                {t("dashboard.aiGuidePage.planBudget")} →
               </p>
             </div>
 
@@ -257,7 +255,7 @@ export default function AIGuide() {
               <div className="text-3xl">📍</div>
 
               <h3 className="mt-4 text-lg font-bold">
-                Location Strategy
+                {t("dashboard.aiGuidePage.locationStrategy")}
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -274,7 +272,7 @@ export default function AIGuide() {
               <div className="text-3xl">📈</div>
 
               <h3 className="mt-4 text-lg font-bold">
-                Growth Strategy
+                {t("dashboard.aiGuidePage.growthStrategy")}
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -297,11 +295,11 @@ export default function AIGuide() {
 
             <div>
               <h2 className="font-bold">
-                {user.language === "hi" ? "व्यक्तिगत एआई मार्गदर्शन" : "Personalized AI Guidance"}
+                {t("dashboard.aiGuidePage.personalized")}
               </h2>
 
               <p className="text-sm text-slate-500">
-                {user.language === "hi" ? "एआई सुझाव यहां दिखाई देंगे।" : "AI recommendations will appear here."}
+                {t("dashboard.aiGuidePage.recommendationsHere")}
               </p>
             </div>
           </div>
@@ -311,7 +309,7 @@ export default function AIGuide() {
               <textarea
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder={user.language === "hi" ? "अपने व्यवसाय के बारे में प्रश्न पूछें..." : "Ask a question about your business..."}
+                placeholder={t("dashboard.aiGuidePage.askPlaceholder")}
                 rows="4"
                 maxLength="2000"
                 className="w-full resize-none rounded-xl border px-4 py-3 pr-16 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
@@ -321,8 +319,8 @@ export default function AIGuide() {
                 <button
                   type="button"
                   onClick={toggleListening}
-                  aria-label={listening ? "Stop voice input" : "Start voice input"}
-                  title={listening ? "Listening..." : "Start voice input"}
+                  aria-label={listening ? t("dashboard.aiGuidePage.stopVoice") : t("dashboard.aiGuidePage.startVoice")}
+                  title={listening ? t("dashboard.aiGuidePage.listening") : t("dashboard.aiGuidePage.startVoice")}
                   className={`absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border text-lg transition ${
                     listening
                       ? "animate-pulse border-red-300 bg-red-50 text-red-600"
@@ -335,7 +333,7 @@ export default function AIGuide() {
             </div>
 
             {listening && (
-              <p className="text-xs font-medium text-green-700">Listening...</p>
+              <p className="text-xs font-medium text-green-700">{t("dashboard.aiGuidePage.listening")}</p>
             )}
 
             {speechError && (
@@ -355,7 +353,7 @@ export default function AIGuide() {
               disabled={asking || !question.trim()}
               className="rounded-xl bg-green-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-60"
             >
-              {asking ? (user.language === "hi" ? "सोच रहा है..." : "Thinking...") : (user.language === "hi" ? "एआई गाइड से पूछें" : "Ask AI Guide")}
+              {asking ? t("dashboard.aiGuidePage.thinking") : t("dashboard.aiGuidePage.ask")}
             </button>
 
             <button
@@ -365,8 +363,8 @@ export default function AIGuide() {
               className="ml-3 rounded-xl border border-green-700 px-5 py-3 text-sm font-semibold text-green-700 transition hover:bg-green-50 disabled:opacity-60"
             >
               {loadingRecommendations
-                ? (user.language === "hi" ? "सुझाव तैयार हो रहे हैं..." : "Preparing recommendations...")
-                : (user.language === "hi" ? "सुझाव पाएं" : "Get Recommendations")}
+                ? t("dashboard.aiGuidePage.preparing")
+                : t("dashboard.aiGuidePage.getRecommendations")}
             </button>
 
             {answer && (
@@ -400,7 +398,7 @@ export default function AIGuide() {
                       {recommendation.description}
                     </p>
                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                      {user.language === "hi" ? "यह क्यों सही है" : "Why this fits"}: {recommendation.reason}
+                      {t("dashboard.aiGuidePage.whyFits")}: {recommendation.reason}
                     </p>
                   </article>
                 ))}

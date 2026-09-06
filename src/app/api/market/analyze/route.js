@@ -79,8 +79,10 @@ export async function POST(request) {
     }
 
     const context = validationResult.data;
+    const responseLanguage = body.language === "hi" ? "simple, natural Hindi" : "clear English";
     const prompt = `You are VyaparMitra's Local Market Analyzer for a small business in India.
 Return valid JSON only. This is an AI assessment, not verified local market data.
+  Write all user-facing text fields entirely in ${responseLanguage}. Do not mix Hindi and English. Keep the JSON keys and level values unchanged.
 Use only the provided business and location context plus general business knowledge. Do not invent or imply real competitor names, competitor counts, ratings, distances, prices, customer counts, market sizes, exact sales, exact foot traffic, government statistics, or other local statistics. Do not claim that any business is actually present in the location. Do not provide exact numerical estimates except marketOpportunityScore, which must be a reasoned 0-100 assessment based on the supplied context.
 If specific local data is unavailable, say "Data unavailable" or clearly phrase the result as an AI assessment based on the provided information.
 Personalize the suggestions to the category, business, budget, customer targets, experience, and location. Do not guarantee profit or demand.
