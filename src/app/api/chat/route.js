@@ -48,7 +48,7 @@ export async function POST(request) {
 
     await connectDB();
     const user = await User.findById(userId)
-      .select("businessIdea businessCategory budget experience state district language")
+      .select("name businessIdea businessCategory budget experience state district village language")
       .lean();
 
     if (!user) {
@@ -63,11 +63,18 @@ export async function POST(request) {
       businessCategory: user.businessCategory || "General",
       budget: user.budget,
       experience: user.experience || "Beginner",
-      location: { state: user.state, district: user.district },
+      location: {
+        state: user.state,
+        district: user.district,
+        village: user.village,
+      },
       language: user.language || "hi",
     };
     const prompt = `You are VyaparMitra, a practical business advisor for small businesses in India.
-Answer the user's message clearly and concisely using the business profile when relevant.
+Detect the language and style of the user's message and answer in that same language and style.
+For Hindi or Hinglish questions, use simple, understandable Hindi/Hinglish. For English questions, answer in clear English.
+Do not translate the user's message into another language before answering.
+Answer clearly and concisely using the business profile when relevant.
 Clearly label user-provided information and AI suggestions when useful.
 Do not guarantee profits or financial outcomes. Do not invent schemes, eligibility rules, market prices, statistics, or other facts.
 For government schemes or market information, say what must be verified with an official or current source. If needed information is unavailable, say so instead of guessing.

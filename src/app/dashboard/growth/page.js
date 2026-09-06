@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getStoredUserId } from "@/lib/clientUser";
 import { getGrowthActions, getGrowthTip } from "@/lib/businessRecommendations";
 
 export default function Growth() {
@@ -13,20 +12,12 @@ export default function Growth() {
   const [selectedAction, setSelectedAction] = useState(null);
 
   useEffect(() => {
-    const userId = getStoredUserId(true);
-
-    if (!userId) {
-      router.push("/onboarding");
-      return;
-    }
-
-    fetch(`/api/users/${userId}`)
+    fetch("/api/auth/me")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.user) {
           setUser(data.user);
-          const userMetricsId = getStoredUserId(true);
-          fetch(`/api/metrics/${userMetricsId}`)
+          fetch(`/api/metrics/${data.user._id}`)
             .then((metricsResponse) => metricsResponse.json())
             .then((metricsData) => {
               if (metricsData.success) setMetrics(metricsData.metrics || []);

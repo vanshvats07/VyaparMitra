@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getStoredUserId } from "@/lib/clientUser";
+import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 import {
   getBusinessIdeas,
   getBusinessStrategy,
@@ -22,25 +22,27 @@ export default function AIGuide() {
   const [recommendations, setRecommendations] = useState([]);
   const [recommendationError, setRecommendationError] = useState("");
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const {
+    supported: speechSupported,
+    listening,
+    error: speechError,
+    toggleListening,
+    stopListening,
+  } = useSpeechRecognition({
+    language: user?.language,
+    onText: setQuestion,
+  });
 
   useEffect(() => {
-    const userId = getStoredUserId(true);
-
-    if (!userId) {
-      router.push("/onboarding");
-      return;
-    }
-
     const timer = setTimeout(() => {
-      setUserId(userId);
-
-      fetch(`/api/users/${userId}`)
+      fetch("/api/auth/me")
         .then((res) => res.json())
         .then((data) => {
           if (data.success && data.user) {
+            setUserId(data.user._id);
             setUser(data.user);
           } else {
-            router.push("/onboarding");
+            router.push("/login");
           }
         })
         .catch((fetchError) => {
@@ -55,6 +57,8 @@ export default function AIGuide() {
   async function handleAsk(e) {
     e.preventDefault();
     if (!question.trim() || !userId) return;
+
+    stopListening();
 
     setAsking(true);
     setAnswerError("");
@@ -301,14 +305,42 @@ export default function AIGuide() {
           </div>
 
           <form onSubmit={handleAsk} className="mt-5 space-y-4">
-            <textarea
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask a question about your business..."
-              rows="4"
-              maxLength="2000"
-              className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
-            />
+            <div className="relative">
+              <textarea
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Ask a question about your business..."
+                rows="4"
+                maxLength="2000"
+                className="w-full resize-none rounded-xl border px-4 py-3 pr-16 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+              />
+
+              {speechSupported && (
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  aria-label={listening ? "Stop voice input" : "Start voice input"}
+                  title={listening ? "Listening..." : "Start voice input"}
+                  className={`absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border text-lg transition ${
+                    listening
+                      ? "animate-pulse border-red-300 bg-red-50 text-red-600"
+                      : "border-slate-300 bg-white text-slate-600 hover:border-green-500 hover:text-green-700"
+                  }`}
+                >
+                  🎙️
+                </button>
+              )}
+            </div>
+
+            {listening && (
+              <p className="text-xs font-medium text-green-700">Listening...</p>
+            )}
+
+            {speechError && (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                {speechError}
+              </p>
+            )}
 
             {answerError && (
               <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">

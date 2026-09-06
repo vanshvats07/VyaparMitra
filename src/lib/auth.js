@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
+import bcrypt from "bcryptjs";
 
 const SESSION_COOKIE_NAME = "vyaparmitra_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
@@ -56,4 +57,33 @@ export function setSessionCookie(response, userId) {
   });
 
   return response;
+}
+
+export function clearSessionCookie(response) {
+  response.cookies.set({
+    name: SESSION_COOKIE_NAME,
+    value: "",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+
+  return response;
+}
+
+export async function hashPassword(password) {
+  return bcrypt.hash(password, 12);
+}
+
+export async function comparePassword(password, passwordHash) {
+  return bcrypt.compare(password, passwordHash);
+}
+
+export function sanitizeUser(user) {
+  const plainUser = typeof user?.toObject === "function" ? user.toObject() : { ...user };
+  delete plainUser.passwordHash;
+  delete plainUser.__v;
+  return plainUser;
 }

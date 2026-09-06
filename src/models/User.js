@@ -15,6 +15,11 @@ const userSchema = new mongoose.Schema(
       unique: true,
     },
 
+    passwordHash: {
+      type: String,
+      select: false,
+    },
+
     state: {
       type: String,
       required: true,
@@ -65,7 +70,12 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-const User =
-  mongoose.models.User || mongoose.model("User", userSchema);
+const existingUserModel = mongoose.models.User;
+
+if (existingUserModel && !existingUserModel.schema.path("passwordHash")) {
+  mongoose.deleteModel("User");
+}
+
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 export default User;

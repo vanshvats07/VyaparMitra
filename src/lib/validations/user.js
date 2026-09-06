@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizePhone } from "@/lib/phone";
 
 /**
  * Zod schema to validate user onboarding input.
@@ -13,7 +14,8 @@ export const createUserSchema = z.object({
   phone: z
     .string({ error: "Phone number is required" })
     .trim()
-    .regex(/^[0-9]{10}$/, "Phone number must be a valid 10-digit number"),
+    .transform(normalizePhone)
+    .pipe(z.string().regex(/^[0-9]{10}$/, "Phone number must be a valid 10-digit number")),
 
   state: z
     .string({ error: "State is required" })
@@ -63,6 +65,22 @@ export const createUserSchema = z.object({
       error: "Language must be either 'hi' or 'en'",
     })
     .default("en"),
+
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100, "Password is too long")
+    .optional(),
+
+  confirmPassword: z.string().optional(),
+}).superRefine((data, context) => {
+  if (data.password && data.confirmPassword !== data.password) {
+    context.addIssue({
+      code: "custom",
+      path: ["confirmPassword"],
+      message: "Passwords do not match",
+    });
+  }
 });
 
 /**

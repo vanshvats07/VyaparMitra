@@ -22,6 +22,12 @@ export default function Home() {
 
           <div className="flex items-center gap-4">
             <button
+              onClick={() => router.push("/login")}
+              className="text-sm font-semibold text-slate-600 hover:text-green-700"
+            >
+              Login
+            </button>
+            <button
               onClick={() => router.push("/onboarding")}
               className="hidden text-sm font-semibold text-slate-600 hover:text-green-700 md:block"
             >
