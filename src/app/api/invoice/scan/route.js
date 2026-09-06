@@ -8,7 +8,7 @@ const INVOICE_PROMPT = `You are an invoice extraction assistant for VyaparMitra.
 
 Return exactly this shape:
 {
-  "invoiceType": "sale",
+  "invoiceType": "unknown",
   "vendorName": "",
   "customerName": "",
   "invoiceNumber": "",
@@ -22,8 +22,8 @@ Return exactly this shape:
   "confidence": 0
 }
 
-Classify the document as "sale" when the business is issuing an invoice to a customer. Classify it as "purchase" when the business is receiving an invoice from a supplier for goods or services it bought. A sales invoice is issued by the business to a customer when the business sells products or services. A purchase invoice is received from a supplier when the business buys products, materials, or services. If the document is genuinely ambiguous, use "unknown" and do not guess.
-For a sale, vendorName is the seller/business and customerName is the buyer. For a purchase, vendorName is the supplier and customerName may be null.
+Classify the document from the invoice context, not just the presence of a total or the word "invoice". A sales invoice is issued by the business to a customer when the business sells products or services. A purchase invoice is received from a supplier when the business buys products, materials, or services. If the document is genuinely ambiguous, use "unknown" and do not guess.
+For a sale, vendorName must be the seller/business and customerName must be the buyer. For a purchase, vendorName must be the supplier and customerName can be null. Use the names, bill-to/ship-to details, issuer, recipient, and wording on the document to determine which side is the business.
 Use null or an empty value when a field is not visible. Monetary values and quantities must be numbers when visible. Confidence must be a number from 0 to 100.`;
 
 function parseJson(text) {
@@ -65,7 +65,9 @@ function normalizeExtraction(value) {
   return {
     invoiceType,
     vendorName: typeof value.vendorName === "string" ? value.vendorName.trim() : "",
-    customerName: typeof value.customerName === "string" ? value.customerName.trim() : "",
+    customerName: value.customerName === null
+      ? null
+      : typeof value.customerName === "string" ? value.customerName.trim() : "",
     invoiceNumber: typeof value.invoiceNumber === "string" ? value.invoiceNumber.trim() : "",
     invoiceDate: typeof value.invoiceDate === "string" ? value.invoiceDate.trim() : "",
     items,
