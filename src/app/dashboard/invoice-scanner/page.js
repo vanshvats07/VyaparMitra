@@ -77,7 +77,13 @@ export default function InvoiceScanner() {
     try {
       setStatus("Extracting details...");
       const response = await fetch("/api/invoice/scan", { method: "POST", body: formData });
-      const data = await response.json();
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error(`Invoice scanner returned an unexpected response (HTTP ${response.status}).`);
+      }
       if (!response.ok || !data.success) throw new Error(data.message || "Couldn't read this invoice.");
       setStatus("Preparing invoice summary...");
       setInvoice(data.invoice);

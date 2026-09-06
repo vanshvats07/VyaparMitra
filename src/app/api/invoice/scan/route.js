@@ -4,6 +4,7 @@ import { getAuthenticatedUserId } from "@/lib/auth";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const SUPPORTED_TYPES = new Set(["image/jpeg", "image/png", "application/pdf"]);
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 const INVOICE_PROMPT = `You are an invoice extraction assistant for VyaparMitra. Read the uploaded invoice carefully and extract only information that is actually visible. Never guess missing values. Return valid JSON only.
 
 Return exactly this shape:
@@ -98,7 +99,7 @@ export async function POST(request) {
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ success: false, message: "This file is too large. Please upload a file under 10 MB." }, { status: 413 });
     }
-    if (!process.env.GEMINI_API_KEY || !process.env.GEMINI_MODEL) {
+    if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json({ success: false, message: "The invoice scanner is temporarily unavailable." }, { status: 503 });
     }
 
@@ -106,7 +107,7 @@ export async function POST(request) {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await Promise.race([
       ai.models.generateContent({
-        model: process.env.GEMINI_MODEL,
+        model: GEMINI_MODEL,
         contents: [{
           role: "user",
           parts: [
@@ -126,7 +127,12 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, invoice: extraction });
   } catch (error) {
-    console.error("Invoice scan error:", error?.message || "Unknown error");
-    return NextResponse.json({ success: false, message: "The invoice scanner is temporarily unavailable. Please try again." }, { status: 502 });
+    console.error("INVOICE_SCANNER_ERROR:", error);
+    return NextResponse.json({
+      success: false,
+      message: process.env.NODE_ENV === "development"
+        ? error?.message || "Invoice scanning failed"
+        : "Invoice scanning failed",
+    }, { status: 502 });
   }
 }
