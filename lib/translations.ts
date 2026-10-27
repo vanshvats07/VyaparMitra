@@ -59,6 +59,9 @@ export const messages = {
     experienceBeginner: "New to business",
     experienceSome: "Some experience",
     experienceExperienced: "Experienced",
+    firstStepsTitle: "Practical first steps",
+    firstStepsDescription:
+      "Use these profile-based prompts to explore your idea. Check local requirements and facts before making financial decisions.",
     editProfile: "Edit business details",
     editBusinessTitle: "Keep your business details up to date.",
     editBusinessDescription:
@@ -128,6 +131,9 @@ export const messages = {
     experienceBeginner: "व्यवसाय में नए",
     experienceSome: "कुछ अनुभव",
     experienceExperienced: "अनुभवी",
+    firstStepsTitle: "शुरुआत के व्यावहारिक कदम",
+    firstStepsDescription:
+      "अपने विचार को समझने के लिए इन सुझावों का उपयोग करें। आर्थिक निर्णय से पहले स्थानीय जानकारी और नियम जाँचें।",
     editProfile: "व्यवसाय की जानकारी बदलें",
     editBusinessTitle: "अपने व्यवसाय की जानकारी अपडेट रखें।",
     editBusinessDescription:

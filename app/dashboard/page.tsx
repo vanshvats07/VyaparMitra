@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { formatBudget } from "../../lib/format-budget";
 import { getCurrentProfile } from "../../lib/profile-session";
+import { buildFirstSteps } from "../../lib/recommendations";
 import { messages } from "../../lib/translations";
 
 export default async function DashboardPage() {
@@ -10,6 +11,7 @@ export default async function DashboardPage() {
     redirect("/onboarding");
   }
   const copy = messages[profile.preferredLanguage];
+  const firstSteps = buildFirstSteps(profile, profile.preferredLanguage);
 
   return (
     <main
@@ -94,6 +96,33 @@ export default async function DashboardPage() {
             </dd>
           </div>
         </dl>
+      </section>
+
+      <section aria-labelledby="first-steps-title" className="mt-8">
+        <div className="max-w-2xl">
+          <h2
+            className="text-2xl font-semibold tracking-tight"
+            id="first-steps-title"
+          >
+            {copy.firstStepsTitle}
+          </h2>
+          <p className="mt-2 leading-7 text-muted">
+            {copy.firstStepsDescription}
+          </p>
+        </div>
+        <ol className="mt-5 grid gap-4 sm:grid-cols-2">
+          {firstSteps.map((step, index) => (
+            <li
+              className="flex gap-4 rounded-2xl border border-border bg-white p-5"
+              key={step}
+            >
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent font-semibold">
+                {index + 1}
+              </span>
+              <p className="pt-1 leading-7">{step}</p>
+            </li>
+          ))}
+        </ol>
       </section>
     </main>
   );
