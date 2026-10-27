@@ -1,0 +1,40 @@
+import "server-only";
+import mongoose from "mongoose";
+
+type MongooseCache = {
+  connection: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+};
+
+const globalWithMongoose = globalThis as typeof globalThis & {
+  mongooseCache?: MongooseCache;
+};
+
+const cache = (globalWithMongoose.mongooseCache ??= {
+  connection: null,
+  promise: null,
+});
+
+export async function connectToDatabase(): Promise<typeof mongoose> {
+  if (cache.connection) {
+    return cache.connection;
+  }
+
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error("Missing required MONGODB_URI environment variable.");
+  }
+
+  if (!cache.promise) {
+    cache.promise = mongoose
+      .connect(uri)
+      .then((connection) => connection)
+      .catch((error: unknown) => {
+        cache.promise = null;
+        throw error;
+      });
+  }
+
+  cache.connection = await cache.promise;
+  return cache.connection;
+}
