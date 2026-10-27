@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VyaparMitra
 
-## Getting Started
+VyaparMitra is a starting point for aspiring entrepreneurs and small business
+owners who want practical guidance shaped by their experience, budget, business
+idea, and local context. The first version focuses on collecting a profile,
+showing profile-based prompts, and maintaining a simple action checklist.
 
-First, run the development server:
+## What it includes
+
+- English and Hindi onboarding and dashboard interfaces.
+- Profile fields for contact details, location, business idea, category, budget,
+  business status, and experience.
+- MongoDB persistence through Mongoose and shared Zod validation.
+- A private, browser-bound session for viewing and updating the profile.
+- Deterministic first-step prompts and a saved, editable checklist.
+- Same-origin checks, bounded JSON request bodies, secure session cookies, and
+  baseline HTTP security headers.
+
+Recommendations are general prompts, not verified market research or
+financial, legal, or regulatory advice.
+
+## Requirements
+
+- Node.js 22.16 or later.
+- npm.
+- A MongoDB instance accessible to the application.
+
+## Setup
+
+Install dependencies and create a local environment file:
+
+```bash
+npm install
+cp .env.example .env.local
+```
+
+Set `MONGODB_URI` in `.env.local` to a MongoDB connection string available to
+your machine. For a local MongoDB server, the example file uses
+`mongodb://127.0.0.1:27017/vyaparmitra`. Do not commit credentials or real
+environment files.
+
+Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Validation commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test
+npm run lint
+npm run build
+```
 
-## Learn More
+The test command uses Node's built-in test runner and TypeScript type stripping.
+The tests cover profile and plan validation, locale options, budget formatting,
+recommendation generation, and request-origin/body-size checks. Database-backed
+flows require a running MongoDB instance and are not exercised by the unit test
+suite.
 
-To learn more about Next.js, take a look at the following resources:
+## Profile and session behavior
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Creating a profile stores the submitted contact and business information in
+MongoDB and creates a 30-day, HTTP-only browser session. In production the
+session cookie is marked `Secure`; serve the application over HTTPS. Signing
+out revokes the browser session but does not delete the stored profile.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This first version does not verify phone numbers with OTP, provide account
+recovery, or let a user retrieve a profile from another browser. A browser
+session is not proof of phone ownership. Do not treat it as production-grade
+account authentication; add a suitable authentication and recovery flow before
+using this application for sensitive production data. Protect `MONGODB_URI`,
+restrict database access, and configure deployment-level abuse controls such
+as rate limiting.
 
-## Deploy on Vercel
+## Main routes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `/` — product introduction.
+- `/onboarding` — create a profile.
+- `/dashboard` — view profile details, suggestions, and saved plan tasks.
+- `/dashboard/edit` — update business status, idea, category, available budget,
+  and experience.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The API persists profiles in MongoDB. Configure `MONGODB_URI` before submitting
+onboarding or making dashboard updates.
