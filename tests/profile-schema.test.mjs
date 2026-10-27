@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { supportedLanguageCodes, supportedLanguages } from "../lib/profile-options.ts";
 import { profileInputSchema } from "../lib/profile-schema.ts";
 
 const validProfile = {
@@ -41,4 +42,20 @@ test("rejects unknown fields rather than silently accepting them", () => {
   });
 
   assert.equal(result.success, false);
+});
+
+test("requires a supported Indian state or union territory", () => {
+  const result = profileInputSchema.safeParse({
+    ...validProfile,
+    state: "Atlantis",
+  });
+
+  assert.equal(result.success, false);
+});
+
+test("provides a display label for every supported language", () => {
+  assert.deepEqual(
+    supportedLanguages.map(({ value }) => value),
+    [...supportedLanguageCodes],
+  );
 });
