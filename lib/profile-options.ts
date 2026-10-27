@@ -1,4 +1,5 @@
 export const supportedLanguageCodes = ["en", "hi"] as const;
+export type SupportedLanguage = (typeof supportedLanguageCodes)[number];
 
 export const supportedLanguages = [
   { value: "en", label: "English" },
