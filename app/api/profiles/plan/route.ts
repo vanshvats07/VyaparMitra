@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { updateCurrentPlanningTasks } from "../../../../lib/profile-session";
-import { isSameOriginRequest } from "../../../../lib/request-security";
+import {
+  isSameOriginRequest,
+  readJsonBody,
+} from "../../../../lib/request-security";
 import { planningTasksSchema } from "../../../../lib/profile-schema";
 
 export const runtime = "nodejs";
@@ -21,15 +24,20 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const payload = await request.json().catch(() => null);
-  if (payload === null) {
+  const body = await readJsonBody(request);
+  if (!body.ok) {
     return NextResponse.json(
-      { error: "The submitted plan is not valid JSON." },
-      { status: 400 },
+      {
+        error:
+          body.reason === "too_large"
+            ? "The submitted plan is too large."
+            : "The submitted plan is not valid JSON.",
+      },
+      { status: body.reason === "too_large" ? 413 : 400 },
     );
   }
 
-  const result = planningTasksSchema.safeParse(payload);
+  const result = planningTasksSchema.safeParse(body.value);
   if (!result.success) {
     return NextResponse.json(
       { error: "Check the plan tasks and try again." },

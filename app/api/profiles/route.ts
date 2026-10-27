@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { BusinessProfile } from "../../../models/BusinessProfile";
 import { createProfileSession } from "../../../lib/profile-session";
-import { isSameOriginRequest } from "../../../lib/request-security";
+import {
+  isSameOriginRequest,
+  readJsonBody,
+} from "../../../lib/request-security";
 import {
   businessDetailsSchema,
   profileInputSchema,
@@ -28,15 +31,20 @@ export async function POST(request: Request) {
     );
   }
 
-  const payload = await request.json().catch(() => null);
-  if (payload === null) {
+  const body = await readJsonBody(request);
+  if (!body.ok) {
     return NextResponse.json(
-      { error: "The submitted profile is not valid JSON." },
-      { status: 400 },
+      {
+        error:
+          body.reason === "too_large"
+            ? "The submitted profile is too large."
+            : "The submitted profile is not valid JSON.",
+      },
+      { status: body.reason === "too_large" ? 413 : 400 },
     );
   }
 
-  const result = profileInputSchema.safeParse(payload);
+  const result = profileInputSchema.safeParse(body.value);
   if (!result.success) {
     return NextResponse.json(
       {
@@ -85,15 +93,20 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const payload = await request.json().catch(() => null);
-  if (payload === null) {
+  const body = await readJsonBody(request);
+  if (!body.ok) {
     return NextResponse.json(
-      { error: "The submitted business details are not valid JSON." },
-      { status: 400 },
+      {
+        error:
+          body.reason === "too_large"
+            ? "The submitted details are too large."
+            : "The submitted business details are not valid JSON.",
+      },
+      { status: body.reason === "too_large" ? 413 : 400 },
     );
   }
 
-  const result = businessDetailsSchema.safeParse(payload);
+  const result = businessDetailsSchema.safeParse(body.value);
   if (!result.success) {
     return NextResponse.json(
       {
