@@ -1,4 +1,12 @@
 import Image from "next/image";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "VyaparMitra | Practical guidance for your business journey",
+  description:
+    "Find practical guidance to start and grow a business, shaped around your skills, budget, and local context.",
+  applicationName: "VyaparMitra",
+};
 
 export default function Home() {
   return (
