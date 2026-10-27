@@ -49,12 +49,12 @@ export default function Home() {
           </span>
           <span className="text-xl">VyaparMitra</span>
         </Link>
-        <a
-          href="#how-it-works"
+        <Link
+          href="/onboarding"
           className="rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-brand hover:text-brand"
         >
-          How it works
-        </a>
+          Create profile
+        </Link>
       </header>
 
       <main>
@@ -72,15 +72,15 @@ export default function Home() {
               VyaparMitra helps you think through a business journey that fits
               your experience, available budget, and local context.
             </p>
-            <a
-              href="#how-it-works"
+            <Link
+              href="/onboarding"
               className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-6 py-3 font-semibold text-white transition-colors hover:bg-brand-strong"
             >
-              Explore how it works
+              Get started
               <span className="ml-2" aria-hidden="true">
                 &rarr;
               </span>
-            </a>
+            </Link>
             <p className="mt-4 text-sm text-muted">
               Made for aspiring entrepreneurs and small business owners.
             </p>
