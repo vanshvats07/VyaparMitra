@@ -59,6 +59,16 @@ export const messages = {
     experienceBeginner: "New to business",
     experienceSome: "Some experience",
     experienceExperienced: "Experienced",
+    editProfile: "Edit business details",
+    editBusinessTitle: "Keep your business details up to date.",
+    editBusinessDescription:
+      "Update the business idea and resources you want your guidance to reflect.",
+    saveChanges: "Save changes",
+    savingChanges: "Saving changes...",
+    editSuccess: "Your business details have been updated.",
+    editValidation: "Please review the highlighted details and try again.",
+    editError: "We could not update your details. Please try again.",
+    cancel: "Cancel",
   },
   hi: {
     onboardingEyebrow: "आपकी शुरुआत",
@@ -118,6 +128,16 @@ export const messages = {
     experienceBeginner: "व्यवसाय में नए",
     experienceSome: "कुछ अनुभव",
     experienceExperienced: "अनुभवी",
+    editProfile: "व्यवसाय की जानकारी बदलें",
+    editBusinessTitle: "अपने व्यवसाय की जानकारी अपडेट रखें।",
+    editBusinessDescription:
+      "अपनी सलाह को उपयोगी रखने के लिए व्यवसाय का विचार और संसाधन अपडेट करें।",
+    saveChanges: "बदलाव सहेजें",
+    savingChanges: "बदलाव सहेजे जा रहे हैं...",
+    editSuccess: "आपकी व्यवसाय जानकारी अपडेट हो गई है।",
+    editValidation: "चिह्नित जानकारी जाँचें और फिर से प्रयास करें।",
+    editError: "जानकारी अपडेट नहीं हो सकी। कृपया फिर से प्रयास करें।",
+    cancel: "रद्द करें",
   },
 } as const satisfies Record<
   SupportedLanguage,

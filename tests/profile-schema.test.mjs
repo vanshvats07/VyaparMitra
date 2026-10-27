@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { supportedLanguageCodes, supportedLanguages } from "../lib/profile-options.ts";
-import { profileInputSchema } from "../lib/profile-schema.ts";
+import {
+  businessDetailsSchema,
+  profileInputSchema,
+} from "../lib/profile-schema.ts";
 
 const validProfile = {
   fullName: "  Asha Devi ",
@@ -58,4 +61,17 @@ test("provides a display label for every supported language", () => {
     supportedLanguages.map(({ value }) => value),
     [...supportedLanguageCodes],
   );
+});
+
+test("validates editable business details without accepting other profile fields", () => {
+  const result = businessDetailsSchema.safeParse({
+    businessStatus: "operating",
+    businessIdea: "Local tailoring service",
+    businessCategory: "services",
+    availableBudget: "75000",
+    experienceLevel: "some",
+    fullName: "Not editable here",
+  });
+
+  assert.equal(result.success, false);
 });

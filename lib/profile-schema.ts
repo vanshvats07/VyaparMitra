@@ -36,4 +36,19 @@ export const profileInputSchema = z
   })
   .strict();
 
+export const businessDetailsSchema = z
+  .object({
+    businessStatus: z.enum(["planning", "operating"]),
+    businessIdea: z.string().trim().min(3).max(160),
+    businessCategory: z.enum(businessCategories),
+    availableBudget: z.coerce
+      .number()
+      .int()
+      .positive()
+      .max(Number.MAX_SAFE_INTEGER),
+    experienceLevel: z.enum(["beginner", "some", "experienced"]),
+  })
+  .strict();
+
 export type ProfileInput = z.infer<typeof profileInputSchema>;
+export type BusinessDetailsInput = z.infer<typeof businessDetailsSchema>;

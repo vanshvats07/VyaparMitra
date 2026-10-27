@@ -28,12 +28,20 @@ export default async function DashboardPage() {
             {copy.dashboardDescription}
           </p>
         </div>
-        <Link
-          className="rounded-full border border-border bg-white px-5 py-3 text-sm font-semibold transition-colors hover:border-brand hover:text-brand"
-          href="/"
-        >
-          {copy.backHome}
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            className="rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-strong"
+            href="/dashboard/edit"
+          >
+            {copy.editProfile}
+          </Link>
+          <Link
+            className="rounded-full border border-border bg-white px-5 py-3 text-sm font-semibold transition-colors hover:border-brand hover:text-brand"
+            href="/"
+          >
+            {copy.backHome}
+          </Link>
+        </div>
       </header>
 
       <section

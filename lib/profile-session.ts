@@ -5,6 +5,7 @@ import type { Types } from "mongoose";
 import { BusinessProfile } from "../models/BusinessProfile";
 import { ProfileSession } from "../models/ProfileSession";
 import { connectToDatabase } from "./mongodb";
+import type { BusinessDetailsInput } from "./profile-schema";
 
 const SESSION_COOKIE_NAME = "vyaparmitra_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
@@ -36,7 +37,7 @@ export async function createProfileSession(
   });
 }
 
-export async function getCurrentProfile() {
+async function getCurrentProfileSession() {
   const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
   if (!token) {
     return null;
@@ -44,13 +45,16 @@ export async function getCurrentProfile() {
 
   await connectToDatabase();
 
-  const session = await ProfileSession.findOne({
+  return ProfileSession.findOne({
     sessionTokenHash: hashSessionToken(token),
     expiresAt: { $gt: new Date() },
   })
     .select("profileId")
     .lean();
+}
 
+export async function getCurrentProfile() {
+  const session = await getCurrentProfileSession();
   if (!session) {
     return null;
   }
@@ -78,6 +82,22 @@ export async function getCurrentProfile() {
     availableBudget: profile.availableBudget,
     experienceLevel: profile.experienceLevel,
   };
+}
+
+export async function updateCurrentBusinessDetails(
+  details: BusinessDetailsInput,
+): Promise<boolean> {
+  const session = await getCurrentProfileSession();
+  if (!session) {
+    return false;
+  }
+
+  const result = await BusinessProfile.updateOne(
+    { _id: session.profileId },
+    { $set: details },
+    { runValidators: true },
+  );
+  return result.matchedCount === 1;
 }
 
 export async function revokeCurrentProfileSession(): Promise<void> {
