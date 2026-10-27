@@ -62,6 +62,16 @@ export const messages = {
     firstStepsTitle: "Practical first steps",
     firstStepsDescription:
       "Use these profile-based prompts to explore your idea. Check local requirements and facts before making financial decisions.",
+    planTitle: "Your action checklist",
+    planDescription:
+      "Keep a short list of actions for your business idea. You can add your own tasks and update them as you go.",
+    planProgress: (completed: number, total: number) =>
+      `${completed} of ${total} steps complete`,
+    taskPlaceholder: "Add a practical next step",
+    addTask: "Add task",
+    removeTask: "Remove task",
+    savePlanError: "We could not save your checklist. Please try again.",
+    savingPlan: "Saving...",
     editProfile: "Edit business details",
     editBusinessTitle: "Keep your business details up to date.",
     editBusinessDescription:
@@ -134,6 +144,16 @@ export const messages = {
     firstStepsTitle: "शुरुआत के व्यावहारिक कदम",
     firstStepsDescription:
       "अपने विचार को समझने के लिए इन सुझावों का उपयोग करें। आर्थिक निर्णय से पहले स्थानीय जानकारी और नियम जाँचें।",
+    planTitle: "आपकी कामों की सूची",
+    planDescription:
+      "अपने व्यवसाय के लिए छोटे और ज़रूरी काम लिखें। आप अपने काम जोड़कर उन्हें पूरा होने पर अपडेट कर सकते हैं।",
+    planProgress: (completed: number, total: number) =>
+      `${total} में से ${completed} कदम पूरे हुए`,
+    taskPlaceholder: "अगला व्यावहारिक कदम लिखें",
+    addTask: "काम जोड़ें",
+    removeTask: "काम हटाएँ",
+    savePlanError: "कामों की सूची सहेजी नहीं जा सकी। कृपया फिर से प्रयास करें।",
+    savingPlan: "सहेजा जा रहा है...",
     editProfile: "व्यवसाय की जानकारी बदलें",
     editBusinessTitle: "अपने व्यवसाय की जानकारी अपडेट रखें।",
     editBusinessDescription:
@@ -152,6 +172,6 @@ export const messages = {
       "agriculture" | "food" | "retail" | "services" | "manufacturing" | "other",
       string
     >;
-    [key: string]: string | Record<string, string> | ((name: string) => string);
+    [key: string]: string | Record<string, string> | ((...args: never[]) => string);
   }
 >;

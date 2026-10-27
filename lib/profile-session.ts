@@ -5,7 +5,10 @@ import type { Types } from "mongoose";
 import { BusinessProfile } from "../models/BusinessProfile";
 import { ProfileSession } from "../models/ProfileSession";
 import { connectToDatabase } from "./mongodb";
-import type { BusinessDetailsInput } from "./profile-schema";
+import type {
+  BusinessDetailsInput,
+  PlanningTask,
+} from "./profile-schema";
 
 const SESSION_COOKIE_NAME = "vyaparmitra_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
@@ -61,7 +64,7 @@ export async function getCurrentProfile() {
 
   const profile = await BusinessProfile.findById(session.profileId)
     .select(
-      "_id fullName state district village preferredLanguage businessStatus businessIdea businessCategory availableBudget experienceLevel",
+      "_id fullName state district village preferredLanguage businessStatus businessIdea businessCategory availableBudget experienceLevel planningTasks",
     )
     .lean();
 
@@ -81,6 +84,7 @@ export async function getCurrentProfile() {
     businessCategory: profile.businessCategory,
     availableBudget: profile.availableBudget,
     experienceLevel: profile.experienceLevel,
+    planningTasks: profile.planningTasks ?? [],
   };
 }
 
@@ -95,6 +99,22 @@ export async function updateCurrentBusinessDetails(
   const result = await BusinessProfile.updateOne(
     { _id: session.profileId },
     { $set: details },
+    { runValidators: true },
+  );
+  return result.matchedCount === 1;
+}
+
+export async function updateCurrentPlanningTasks(
+  planningTasks: PlanningTask[],
+): Promise<boolean> {
+  const session = await getCurrentProfileSession();
+  if (!session) {
+    return false;
+  }
+
+  const result = await BusinessProfile.updateOne(
+    { _id: session.profileId },
+    { $set: { planningTasks } },
     { runValidators: true },
   );
   return result.matchedCount === 1;

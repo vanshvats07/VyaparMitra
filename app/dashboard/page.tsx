@@ -4,6 +4,7 @@ import { formatBudget } from "../../lib/format-budget";
 import { getCurrentProfile } from "../../lib/profile-session";
 import { buildFirstSteps } from "../../lib/recommendations";
 import { messages } from "../../lib/translations";
+import PlanChecklist from "./plan-checklist";
 
 export default async function DashboardPage() {
   const profile = await getCurrentProfile();
@@ -124,6 +125,11 @@ export default async function DashboardPage() {
           ))}
         </ol>
       </section>
+
+      <PlanChecklist
+        initialTasks={profile.planningTasks}
+        language={profile.preferredLanguage}
+      />
     </main>
   );
 }

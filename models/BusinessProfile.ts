@@ -3,9 +3,26 @@ import {
   indianStatesAndUnionTerritories,
   supportedLanguageCodes,
 } from "../lib/profile-options";
-import { businessCategories, type ProfileInput } from "../lib/profile-schema";
+import {
+  businessCategories,
+  type PlanningTask,
+  type ProfileInput,
+} from "../lib/profile-schema";
 
-const businessProfileSchema = new Schema<ProfileInput>(
+type BusinessProfileRecord = ProfileInput & {
+  planningTasks?: PlanningTask[];
+};
+
+const planningTaskSchema = new Schema<PlanningTask>(
+  {
+    id: { type: String, required: true, maxlength: 80 },
+    title: { type: String, required: true, trim: true, maxlength: 160 },
+    completed: { type: Boolean, required: true, default: false },
+  },
+  { _id: false, strict: "throw" },
+);
+
+const businessProfileSchema = new Schema<BusinessProfileRecord>(
   {
     fullName: {
       type: String,
@@ -45,10 +62,18 @@ const businessProfileSchema = new Schema<ProfileInput>(
       required: true,
       enum: ["beginner", "some", "experienced"],
     },
+    planningTasks: {
+      type: [planningTaskSchema],
+      default: [],
+      validate: {
+        validator: (tasks: PlanningTask[]) => tasks.length <= 30,
+        message: "A business plan can contain no more than 30 tasks.",
+      },
+    },
   },
   { timestamps: true, strict: "throw" },
 );
 
 export const BusinessProfile =
-  (models.BusinessProfile as mongoose.Model<ProfileInput> | undefined) ??
-  model<ProfileInput>("BusinessProfile", businessProfileSchema);
+  (models.BusinessProfile as mongoose.Model<BusinessProfileRecord> | undefined) ??
+  model<BusinessProfileRecord>("BusinessProfile", businessProfileSchema);

@@ -8,6 +8,7 @@ import {
 } from "../../../lib/profile-schema";
 import { connectToDatabase } from "../../../lib/mongodb";
 import { updateCurrentBusinessDetails } from "../../../lib/profile-session";
+import { createStarterPlan } from "../../../lib/planning";
 
 export const runtime = "nodejs";
 
@@ -50,7 +51,13 @@ export async function POST(request: Request) {
   }
 
   await connectToDatabase();
-  const profile = await BusinessProfile.create(result.data);
+  const profile = await BusinessProfile.create({
+    ...result.data,
+    planningTasks: createStarterPlan(
+      result.data,
+      result.data.preferredLanguage,
+    ),
+  });
 
   try {
     await createProfileSession(profile._id);

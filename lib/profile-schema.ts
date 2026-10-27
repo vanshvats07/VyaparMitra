@@ -50,5 +50,31 @@ export const businessDetailsSchema = z
   })
   .strict();
 
+export const planningTaskSchema = z
+  .object({
+    id: z.string().regex(/^[a-zA-Z0-9-]{1,80}$/),
+    title: z.string().trim().min(3).max(160),
+    completed: z.boolean(),
+  })
+  .strict();
+
+export const planningTasksSchema = z
+  .array(planningTaskSchema)
+  .max(30)
+  .superRefine((tasks, context) => {
+    const ids = new Set<string>();
+    for (const [index, task] of tasks.entries()) {
+      if (ids.has(task.id)) {
+        context.addIssue({
+          code: "custom",
+          message: "Task IDs must be unique.",
+          path: [index, "id"],
+        });
+      }
+      ids.add(task.id);
+    }
+  });
+
 export type ProfileInput = z.infer<typeof profileInputSchema>;
 export type BusinessDetailsInput = z.infer<typeof businessDetailsSchema>;
+export type PlanningTask = z.infer<typeof planningTaskSchema>;
