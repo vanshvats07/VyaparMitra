@@ -4,6 +4,7 @@ import { formatBudget } from "../../lib/format-budget";
 import { getCurrentProfile } from "../../lib/profile-session";
 import { buildFirstSteps } from "../../lib/recommendations";
 import { messages } from "../../lib/translations";
+import LogoutButton from "./logout-button";
 import PlanChecklist from "./plan-checklist";
 
 export default async function DashboardPage() {
@@ -44,6 +45,7 @@ export default async function DashboardPage() {
           >
             {copy.backHome}
           </Link>
+          <LogoutButton language={profile.preferredLanguage} />
         </div>
       </header>
 

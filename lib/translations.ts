@@ -82,6 +82,9 @@ export const messages = {
     editValidation: "Please review the highlighted details and try again.",
     editError: "We could not update your details. Please try again.",
     cancel: "Cancel",
+    signOut: "Sign out",
+    signingOut: "Signing out...",
+    signOutError: "We could not end this session. Please try again.",
   },
   hi: {
     onboardingEyebrow: "आपकी शुरुआत",
@@ -164,6 +167,9 @@ export const messages = {
     editValidation: "चिह्नित जानकारी जाँचें और फिर से प्रयास करें।",
     editError: "जानकारी अपडेट नहीं हो सकी। कृपया फिर से प्रयास करें।",
     cancel: "रद्द करें",
+    signOut: "साइन आउट करें",
+    signingOut: "साइन आउट हो रहा है...",
+    signOutError: "सत्र बंद नहीं हो सका। कृपया फिर से प्रयास करें।",
   },
 } as const satisfies Record<
   SupportedLanguage,
